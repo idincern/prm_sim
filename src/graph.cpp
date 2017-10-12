@@ -1,4 +1,14 @@
-//A simple undirected, adjacency list
+/*! @file
+ *
+ *  @brief A weighted undirected adjacency list.
+ *
+ *  This class contains the methods for defining a weighted undirected
+ *  adjacency list (a Graph). It also contains a function to find the
+ *  shortest path between two verticies.
+ *
+ *  @author arosspope
+ *  @date 12-10-2017
+*/
 #include "graph.h"
 
 #include <algorithm>
@@ -29,9 +39,10 @@ bool Graph::addEdge(const vertex v, const vertex u, const weight w)
   }
 
   //TODO: Determine correct behaviour
-  if(container_.find(v)->second.size() >= maxNeighbours_
-     || container_.find(u)->second.size() >= maxNeighbours_){
-    return false; //Check the verticies are not at their neighbour limits
+  //Check the verticies are not at their neighbour limits
+  if(container_.find(v)->second.size() >= maxNeighbours_ ||
+     container_.find(u)->second.size() >= maxNeighbours_){
+    return false;
   }
 
   container_.find(v)->second.insert(edge(u, w));
@@ -40,7 +51,14 @@ bool Graph::addEdge(const vertex v, const vertex u, const weight w)
   return true;
 }
 
-
+/*! @brief Finds the closest vertex in the queue.
+ *
+ *  @param distances This contains the distance between each vertex and the start.
+ *  @param q The queue of available verticies to search within.
+ *  @return vertex - The next closest vertex.
+ *
+ *  @note This assumes that q is non-empty.
+ */
 vertex closestVertex(std::map<vertex, double> distances, std::vector<vertex> q){
   vertex minVertex = q.at(0);
   double minDist = std::numeric_limits<double>::infinity();
@@ -90,10 +108,15 @@ std::vector<vertex> Graph::constructPath(std::map<vertex, double> distances, con
 std::vector<vertex> Graph::shortestPath(const vertex start, const vertex goal){
   //This map contains the distances between various nodes and the start node.
   std::map<vertex, double> distances;
-  std::vector<vertex> queue;
+  std::vector<vertex> queue, path;
+
+  if(container_.find(start) == container_.end() ||
+     container_.find(goal) == container_.end()){
+    return path; //Empty path between two unknown verticies
+  }
 
   for(auto const &v: container_){
-    //Initially, distances to other verticies is infinity
+    //Initially, distances to other verticies is equal to infinity
     distances.insert(std::pair<vertex, double>(v.first, std::numeric_limits<double>::infinity()));
     queue.push_back(v.first);
   }
@@ -104,9 +127,8 @@ std::vector<vertex> Graph::shortestPath(const vertex start, const vertex goal){
   while(!queue.empty())
   {
     vertex v = closestVertex(distances, queue);
-
-
     edges neighbours = container_[v];
+
     for(auto const &n: neighbours)
     {
       double alt = distances[v] + n.second; //neighbour distance + weight
@@ -120,16 +142,3 @@ std::vector<vertex> Graph::shortestPath(const vertex start, const vertex goal){
 
   return constructPath(distances, start, goal);
 }
-
-void Graph::printGraph(){
-  for(auto const &v: container_){
-    std::cout << v.first << " -> ";
-
-    for(auto const &e: v.second){
-      std::cout << e.first << "[" << e.second << "]" << ", ";
-    }
-
-    std::cout << std::endl;
-  }
-}
-

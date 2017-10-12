@@ -3,7 +3,7 @@
 
 //These tests are based on the graph examples found
 //on the website: https://brilliant.org/wiki/dijkstras-short-path-finder/
-TEST(GraphTest, FoundPath1){
+TEST(Graphs, FoundPath1){
   Graph g(7);
 
   g.addVertex(0);
@@ -49,7 +49,7 @@ TEST(GraphTest, FoundPath1){
   EXPECT_EQ(8, path[4]);
 }
 
-TEST(GraphTest, FoundPath2){
+TEST(Graphs, FoundPath2){
   Graph g(7);
 
   g.addVertex(0);
@@ -92,7 +92,7 @@ TEST(GraphTest, FoundPath2){
   EXPECT_EQ(8, path[4]);
 }
 
-TEST(GraphTest, NoPath){
+TEST(Graphs, NoPath){
   Graph g(7);
 
   g.addVertex(0);
@@ -123,7 +123,7 @@ TEST(GraphTest, NoPath){
   EXPECT_EQ(0, g.shortestPath(0, 8).size());
 }
 
-TEST(GraphTest, MaxNeighbours){
+TEST(Graphs, MaxNeighbours){
   Graph g(3);
 
   g.addVertex(0);
