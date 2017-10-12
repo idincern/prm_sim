@@ -26,7 +26,7 @@ set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
 
 message ( STATUS " CMake C++ FLAGS ${CMAKE_CXX_FLAGS}")
 
-find_package(OpenCV 2)
+find_package(OpenCV)
 find_package(Eigen3 REQUIRED)
 
 
@@ -209,7 +209,7 @@ target_link_libraries(main maps)
 #############
 
 ## Add gtest based cpp test target and link libraries
-catkin_add_gtest(${PROJECT_NAME}-test test/graph-test.cpp )
+catkin_add_gtest(${PROJECT_NAME}-test test/map-tests.cpp)
 if(TARGET ${PROJECT_NAME}-test)
    target_link_libraries(${PROJECT_NAME}-test ${catkin_LIBRARIES} maps)
 endif()
