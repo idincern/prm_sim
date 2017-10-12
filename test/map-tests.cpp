@@ -43,18 +43,46 @@ cv::Mat unknownMap(void){
   return image;
 }
 
-TEST(LocalMap, pointsConnect){
-//  LocalMap l;
+TEST(LocalMap, connectInEmptyMap){
+  LocalMap l(20.0, 0.1);
 
-//  cv::Mat img = cv::imread("../empty.jpg"); //200x283px
+  cv::Mat img = blankMap();
+  //Vertical
+  ASSERT_TRUE(l.canConnect(img, cv::Point(100, 0), cv::Point(100, 200)));
 
-//  TLocalOrd pt1 = {50, 60};
-//  TLocalOrd pt2 = {100, 80};
+  //Horizontal
+  ASSERT_TRUE(l.canConnect(img, cv::Point(0, 100), cv::Point(200, 100)));
 
-//  cv::imshow("Before", img); //TODO: Test code
-//  //ASSERT_TRUE(l.canConnect(img, pt1, pt2));
-//  cv::imshow("After", img); //TODO: Test code
+  //Diagonal
+  ASSERT_TRUE(l.canConnect(img, cv::Point(0, 0), cv::Point(200, 200)));
+}
 
+TEST(LocalMap, connectInPartionedMap){
+  LocalMap l(20.0, 0.1);
+
+  cv::Mat img = partionedMap();
+  //Vertical
+  ASSERT_FALSE(l.canConnect(img, cv::Point(100, 0), cv::Point(100, 200)));
+
+  //Horizontal
+  ASSERT_TRUE(l.canConnect(img, cv::Point(0, 150), cv::Point(10, 150)));
+
+  //Diagonal
+  ASSERT_FALSE(l.canConnect(img, cv::Point(0, 0), cv::Point(200, 200)));
+}
+
+TEST(localMap, connectInUnknownMap){
+  LocalMap l(20.0, 0.1);
+
+  cv::Mat img = partionedMap();
+  //Vertical
+  ASSERT_FALSE(l.canConnect(img, cv::Point(100, 0), cv::Point(100, 200)));
+
+  //Horizontal -Two small points in known area of the map
+  ASSERT_TRUE(l.canConnect(img, cv::Point(0, 50), cv::Point(200, 50)));
+
+  //Diagonal
+  ASSERT_FALSE(l.canConnect(img, cv::Point(0, 0), cv::Point(200, 200)));
 }
 
 TEST(ImageGen, CorrectDimensions){
