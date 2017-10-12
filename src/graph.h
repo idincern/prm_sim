@@ -60,6 +60,7 @@ public:
    *                   vector will be empty if there is no path.
    */
   std::vector<vertex> shortestPath(const vertex start, const vertex goal);
+
 private:
   unsigned int maxNeighbours_;         /*!< A vertex has a max amount of neighbours */
   std::map<vertex, edges> container_;  /*!< A container of all verticies and their neighbours (edges) */

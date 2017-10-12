@@ -3,7 +3,6 @@
 #include <cstdlib>
 
 #include "graph.h"
-//#include "house.h"
 
 int main() {
   Graph g(7);

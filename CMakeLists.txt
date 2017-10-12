@@ -140,7 +140,7 @@ include_directories(
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/prm_sim.cpp
 # )
-add_library(graphs src/graph.cpp)
+add_library(roadmaps src/roadmap.cpp src/graph.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -167,7 +167,7 @@ add_executable(main src/main.cpp)
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-target_link_libraries(main graphs)
+target_link_libraries(main roadmaps)
 
 #############
 ## Install ##
@@ -211,10 +211,10 @@ target_link_libraries(main graphs)
 ## Add gtest based cpp test target and link libraries
 catkin_add_gtest(${PROJECT_NAME}-test test/graph-test.cpp )
 if(TARGET ${PROJECT_NAME}-test)
-   target_link_libraries(${PROJECT_NAME}-test ${catkin_LIBRARIES} graphs)
+   target_link_libraries(${PROJECT_NAME}-test ${catkin_LIBRARIES} roadmaps)
 endif()
 
-target_link_libraries(${PROJECT_NAME}-test graphs)
+target_link_libraries(${PROJECT_NAME}-test roadmaps)
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
