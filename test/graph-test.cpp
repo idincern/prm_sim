@@ -92,6 +92,49 @@ TEST(Graphs, FoundPath2){
   EXPECT_EQ(8, path[4]);
 }
 
+TEST(Graphs, UnorderedVerticies){
+  Graph g(7);
+
+  g.addVertex(10);
+  g.addVertex(11);
+  g.addVertex(12);
+  g.addVertex(13);
+  g.addVertex(25);
+  g.addVertex(15);
+  g.addVertex(16);
+  g.addVertex(17);
+  g.addVertex(50);
+
+  g.addEdge(10, 11, 3.0);
+  g.addEdge(10, 12, 7.0);
+  g.addEdge(10, 13, 5.0);
+
+  g.addEdge(11, 25, 7.0);
+  g.addEdge(11, 12, 1.0);
+
+  g.addEdge(12, 13, 3.0);
+  g.addEdge(12, 25, 2.0);
+  g.addEdge(12, 15, 1.0);
+  g.addEdge(12, 16, 3.0);
+
+  g.addEdge(25, 15, 2.0);
+  g.addEdge(25, 17, 1.0);
+
+  g.addEdge(15, 17, 3.0);
+  g.addEdge(15, 16, 3.0);
+
+  g.addEdge(16, 50, 4.0);
+  g.addEdge(17, 50, 5.0);
+
+  std::vector<vertex> path = g.shortestPath(10, 50);
+
+  EXPECT_EQ(10, path[0]);
+  EXPECT_EQ(11, path[1]);
+  EXPECT_EQ(12, path[2]);
+  EXPECT_EQ(16, path[3]);
+  EXPECT_EQ(50, path[4]);
+}
+
 TEST(Graphs, NoPath){
   Graph g(7);
 
