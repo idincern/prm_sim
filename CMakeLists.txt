@@ -26,7 +26,7 @@ set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
 
 message ( STATUS " CMake C++ FLAGS ${CMAKE_CXX_FLAGS}")
 
-find_package(OpenCV)
+find_package(OpenCV 2)
 find_package(Eigen3 REQUIRED)
 
 
@@ -140,7 +140,7 @@ include_directories(
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/prm_sim.cpp
 # )
-add_library(roadmaps src/roadmap.cpp src/graph.cpp)
+add_library(maps src/globalmap.cpp src/graph.cpp src/localmap.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -167,7 +167,7 @@ add_executable(main src/main.cpp)
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-target_link_libraries(main roadmaps)
+target_link_libraries(main maps)
 
 #############
 ## Install ##
@@ -211,10 +211,10 @@ target_link_libraries(main roadmaps)
 ## Add gtest based cpp test target and link libraries
 catkin_add_gtest(${PROJECT_NAME}-test test/graph-test.cpp )
 if(TARGET ${PROJECT_NAME}-test)
-   target_link_libraries(${PROJECT_NAME}-test ${catkin_LIBRARIES} roadmaps)
+   target_link_libraries(${PROJECT_NAME}-test ${catkin_LIBRARIES} maps)
 endif()
 
-target_link_libraries(${PROJECT_NAME}-test roadmaps)
+target_link_libraries(${PROJECT_NAME}-test maps)
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
