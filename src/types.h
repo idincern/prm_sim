@@ -12,6 +12,7 @@ typedef struct
 {
   double x;   /*!< x coordinate within global map (m) */
   double y;   /*!< y coordinate within global map (m) */
+
 } TGlobalOrd;
 
 #endif // TYPES

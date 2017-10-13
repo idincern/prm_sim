@@ -12,6 +12,8 @@
 #include "types.h"
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
+#include <map>
+#include <utility>
 
 class LocalMap
 {
@@ -28,8 +30,12 @@ public:
   //Assumes m is the size defined by map size
   bool canConnect(cv::Mat &m, cv::Point start, cv::Point end);
 
+  //checks if a point is in the known map space
+  bool inMap(cv::Point p);
+
   //Draw prm overlay on local map
-  //void drawPRM(std::map<vertex, edges> container, cv::Mat m);
+  //For each point in map, draw a circle and a line to all the other points
+  void overlayPRM(cv::Mat &m, std::vector<std::pair<cv::Point, std::vector<cv::Point>>> prm);
 
   void setMapSize(double mapSize);
 

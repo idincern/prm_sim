@@ -41,13 +41,7 @@ cv::Point LocalMap::convertToPoint(TGlobalOrd reference, TGlobalOrd ordinate){
 
 bool LocalMap::canConnect(cv::Mat &m, cv::Point start, cv::Point end){
   //Do a bounds check
-  if((start.y > pixelMapSize_ || start.y < 0) ||
-     (start.x > pixelMapSize_ || start.x < 0)){
-    return false;
-  }
-
-  if((end.y > pixelMapSize_ || end.y < 0) ||
-     (end.x > pixelMapSize_ || end.x < 0)){
+  if(!inMap(start) || !inMap(end)){
     return false;
   }
 
@@ -61,6 +55,22 @@ bool LocalMap::canConnect(cv::Mat &m, cv::Point start, cv::Point end){
   }
 
   return true;
+}
+
+void LocalMap::overlayPRM(cv::Mat &m, std::vector<std::pair<cv::Point, std::vector<cv::Point>>> prm){
+  for(auto const &node: prm){
+    //Draw circle to represent point
+    cv::circle(m, node.first, 2, cv::Scalar(255,0,0),-1);
+
+    //Connect neighbours
+    for(auto const &neighbour: node.second){
+      cv::line(m, node.first, neighbour, cv::Scalar(255,0,0),1);
+    }
+  }
+}
+
+bool LocalMap::inMap(cv::Point p){
+  return (p.y <= pixelMapSize_ && p.y >= 0) && (p.x <= pixelMapSize_ && p.x >= 0);
 }
 
 void LocalMap::setMapSize(double mapSize)

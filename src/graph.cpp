@@ -142,3 +142,8 @@ std::vector<vertex> Graph::shortestPath(const vertex start, const vertex goal){
 
   return constructPath(distances, start, goal);
 }
+
+std::map<vertex, edges> Graph::container() const
+{
+  return container_;
+}

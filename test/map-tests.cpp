@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include "../src/types.h"
 #include "../src/localmap.h"
 #include "../src/graph.h"
 
@@ -6,6 +7,9 @@
 #include <image_transport/image_transport.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
+#include <map>
+#include <utility>
+#include <vector>
 
 cv::Mat blankMap(void){
   //This map is completely white
@@ -13,7 +17,7 @@ cv::Mat blankMap(void){
   double res = 0.1;
   int pixels = (int) mapSize / res;
 
-  cv::Mat image(pixels, pixels, CV_8UC1, cv::Scalar(255, 255, 255));
+  cv::Mat image(pixels, pixels, CV_8UC3, cv::Scalar(255, 255, 255));
 
   return image;
 }
@@ -24,7 +28,7 @@ cv::Mat partionedMap(void){
   double res = 0.1;
   int pixels = (int) mapSize / res;
 
-  cv::Mat image(pixels, pixels, CV_8UC1, cv::Scalar(255, 255, 255));
+  cv::Mat image(pixels, pixels, CV_8UC3, cv::Scalar(255, 255, 255));
   cv::line(image,cv::Point(0,100),cv::Point(200,100),cv::Scalar(0,0,0),1);
 
   return image;
@@ -36,7 +40,7 @@ cv::Mat unknownMap(void){
   double res = 0.1;
   int pixels = (int) mapSize / res;
 
-  cv::Mat image(pixels, pixels, CV_8UC1, cv::Scalar(255, 255, 255));
+  cv::Mat image(pixels, pixels, CV_8UC3, cv::Scalar(255, 255, 255));
   cv::rectangle(image, cv::Point(10,10),cv::Point(70,75),cv::Scalar(125,125,125),-1);
   cv::rectangle(image, cv::Point(80,80),cv::Point(200,200),cv::Scalar(125,125,125),-1);
 
@@ -85,6 +89,14 @@ TEST(LocalMap, connectInUnknownMap){
   ASSERT_FALSE(l.canConnect(img, cv::Point(0, 0), cv::Point(200, 200)));
 }
 
+TEST(LocalMap, connectOutsideMap){
+  LocalMap l(20.0, 0.1);
+
+  cv::Mat img = blankMap();
+  ASSERT_FALSE(l.canConnect(img, cv::Point(-100, 200), cv::Point(100, 100)));
+  ASSERT_FALSE(l.canConnect(img, cv::Point(100, 200), cv::Point(-100, -100)));
+}
+
 TEST(LocalMap, convertPositivePoints){
   LocalMap l(20.0, 0.1);
 
@@ -120,6 +132,29 @@ TEST(LocalMap, convertPointsOnLine){
   EXPECT_EQ(cv::Point(150, 100), l.convertToPoint(ref, p2));
   EXPECT_EQ(cv::Point(50, 100), l.convertToPoint(ref, p3));
   EXPECT_EQ(cv::Point(100, 150), l.convertToPoint(ref, p4));
+}
+
+TEST(LocalMap, renderPRM){
+  LocalMap l(20.0, 0.1);
+
+  cv::Point p1(50, 50), p2(150, 50), p3(50, 150), p4(100, 300);
+  cv::Mat m = unknownMap();
+
+  //Create map
+  std::vector<std::pair<cv::Point, std::vector<cv::Point>>> prm;
+
+  prm.push_back(std::make_pair(p1, std::vector<cv::Point>{p2, p3, p4}));
+  prm.push_back(std::make_pair(p2, std::vector<cv::Point>{p1, p3, p4}));
+  prm.push_back(std::make_pair(p3, std::vector<cv::Point>{p1, p2}));
+  prm.push_back(std::make_pair(p4, std::vector<cv::Point>{p1, p2}));
+
+  l.overlayPRM(m, prm);
+
+  //Check that all points and lines have been rendered correctly...
+
+  cv::imshow("tesst", m);
+
+  cv::waitKey(1000000);
 }
 
 TEST(ImageGen, CorrectDimensions){

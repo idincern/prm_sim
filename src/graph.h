@@ -61,6 +61,13 @@ public:
    */
   std::vector<vertex> shortestPath(const vertex start, const vertex goal);
 
+
+  /*! @brief Returns the container representing the graph.
+   *
+   *  @return map<vertex, edges> - The container that represents the graph.
+   */
+  std::map<vertex, edges> container() const;
+
 private:
   unsigned int maxNeighbours_;         /*!< A vertex has a max amount of neighbours */
   std::map<vertex, edges> container_;  /*!< A container of all verticies and their neighbours (edges) */
