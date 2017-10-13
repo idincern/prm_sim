@@ -37,6 +37,9 @@ public:
   //For each point in map, draw a circle and a line to all the other points
   void overlayPRM(cv::Mat &m, std::vector<std::pair<cv::Point, std::vector<cv::Point>>> prm);
 
+  //Overlay a red path on the map, it assumes the points are in order and connected to eachother
+  void overlayPath(cv::Mat &m, std::vector<cv::Point> path);
+
   void setMapSize(double mapSize);
 
   void setResolution(double resolution);

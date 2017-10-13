@@ -69,6 +69,23 @@ void LocalMap::overlayPRM(cv::Mat &m, std::vector<std::pair<cv::Point, std::vect
   }
 }
 
+void LocalMap::overlayPath(cv::Mat &m, std::vector<cv::Point> path){
+  if(path.size() < 1){
+    return; //No point drawing an empty path
+  }
+
+  cv::Point previousNode = path.at(0);
+
+  for(auto const &node: path){
+    //Draw circle to represent point
+    cv::circle(m, node, 2, cv::Scalar(0,0,255),-1);
+
+    //Connect to previous point
+    cv::line(m, node, previousNode, cv::Scalar(0,0,255),1);
+    previousNode = node;
+  }
+}
+
 bool LocalMap::inMap(cv::Point p){
   return (p.y <= pixelMapSize_ && p.y >= 0) && (p.x <= pixelMapSize_ && p.x >= 0);
 }

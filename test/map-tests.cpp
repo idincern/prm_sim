@@ -17,7 +17,7 @@ cv::Mat blankMap(void){
   double res = 0.1;
   int pixels = (int) mapSize / res;
 
-  cv::Mat image(pixels, pixels, CV_8UC3, cv::Scalar(255, 255, 255));
+  cv::Mat image(pixels, pixels, CV_8UC1, cv::Scalar(255, 255, 255));
 
   return image;
 }
@@ -151,10 +151,35 @@ TEST(LocalMap, renderPRM){
   l.overlayPRM(m, prm);
 
   //Check that all points and lines have been rendered correctly...
+  for(auto const &node: prm){
+    if(l.inMap(node.first)){
+      cv::Vec3b intensity = m.at<cv::Vec3b>(node.first);
+      EXPECT_EQ(255, intensity.val[0]); //Blue nodes
+      EXPECT_EQ(0, intensity.val[1]);
+      EXPECT_EQ(0, intensity.val[2]);
+    }
+  }
+}
 
-  cv::imshow("tesst", m);
+TEST(LocalMap, renderPath){
+  LocalMap l(20.0, 0.1);
 
-  cv::waitKey(1000000);
+  cv::Point p1(50, 50), p2(150, 50), p3(50, 150), p4(100, 300);
+  cv::Mat m = unknownMap();
+
+  //Create path
+  std::vector<cv::Point> path = {p3, p1, p2};
+  l.overlayPath(m, path);
+
+  //Check that all points and lines have been rendered correctly...
+  for(auto const &node: path){
+    if(l.inMap(node)){
+      cv::Vec3b intensity = m.at<cv::Vec3b>(node);
+      EXPECT_EQ(0, intensity.val[0]); //Red nodes
+      EXPECT_EQ(0, intensity.val[1]);
+      EXPECT_EQ(255, intensity.val[2]);
+    }
+  }
 }
 
 TEST(ImageGen, CorrectDimensions){
@@ -177,7 +202,7 @@ TEST(ImageGen, CorrectDimensions){
   cv::line(image,cv::Point(0,0),cv::Point(pixels,pixels),cv::Scalar(0,0,0),1);
 
   // Let's check the centre is now black (0)
-  EXPECT_EQ(0,image.at<uchar>(pixels/2,pixels/2));
+  EXPECT_EQ(0, image.at<uchar>(pixels/2,pixels/2));
 }
 
 //These tests are based on the graph examples found
