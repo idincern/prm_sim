@@ -1,6 +1,8 @@
 /*! @file
  *
- *  @brief A roadmap... TODO!
+ *  @brief Routines for obtaining information about a local map.
+ *
+ *  TODO: Better description?
  *
  *  @author arosspope
  *  @date 12-10-2017
@@ -25,15 +27,15 @@ cv::Point LocalMap::convertToPoint(TGlobalOrd reference, TGlobalOrd ordinate){
 
   //With respect to the reference, determine which sector the ordinate is within
   if(ordinate.x > reference.x){
-    convertedX = (pixelMapSize_ / 2) + (std::abs(std::round(ordinate.x - reference.x))/resolution_);
+    convertedX = (pixelMapSize_ / 2) + (std::abs(std::round((ordinate.x - reference.x)/resolution_)));
   } else {
-    convertedX = (pixelMapSize_ / 2) - (std::abs(std::round(ordinate.x - reference.x))/resolution_);
+    convertedX = (pixelMapSize_ / 2) - (std::abs(std::round((ordinate.x - reference.x)/resolution_)));
   }
 
   if(ordinate.y > reference.y){
-    convertedY = (pixelMapSize_ / 2) - (std::abs(std::round(ordinate.y - reference.y))/resolution_);
+    convertedY = (pixelMapSize_ / 2) - (std::abs(std::round((ordinate.y - reference.y)/resolution_)));
   } else {
-    convertedY = (pixelMapSize_ / 2) + (std::abs(std::round(ordinate.y - reference.y))/resolution_);
+    convertedY = (pixelMapSize_ / 2) + (std::abs(std::round((ordinate.y - reference.y)/resolution_)));
   }
 
   return cv::Point(convertedX, convertedY);
@@ -58,6 +60,8 @@ bool LocalMap::canConnect(cv::Mat &m, cv::Point start, cv::Point end){
 }
 
 void LocalMap::overlayPRM(cv::Mat &m, std::vector<std::pair<cv::Point, std::vector<cv::Point>>> prm){
+  //TODO: This colud be made smarter by checking if a link between points has already been drawn.
+
   for(auto const &node: prm){
     //Draw circle to represent point
     cv::circle(m, node.first, 2, cv::Scalar(255,0,0),-1);
@@ -99,6 +103,4 @@ void LocalMap::setResolution(double resolution)
 {
   resolution_ = resolution;
 }
-
-//Drawing lines: https://stackoverflow.com/questions/28780947/opencv-create-new-image-using-cvmat
 

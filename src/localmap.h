@@ -1,6 +1,8 @@
 /*! @file
  *
- *  @brief A roadmap... TODO!
+ *  @brief Routines for obtaining information about a local map.
+ *
+ *  TODO: Better description?
  *
  *  @author arosspope
  *  @date 12-10-2017
@@ -8,40 +10,86 @@
 #ifndef LOCALMAP_H
 #define LOCALMAP_H
 
-#include "graph.h"
-#include "types.h"
-#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/opencv.hpp>
 #include <vector>
-#include <map>
 #include <utility>
+
+#include "types.h"
 
 class LocalMap
 {
 public:
   //TODO: Inputs robot size for effective cfg space?
-  //mapSize in meters
+  /*! @brief Constructor for LocalMap.
+   *
+   *  @param mapSize The size of the overall map in meters (square maps only).
+   *  @param res The resolution of the local maps provided to this object.
+   */
   LocalMap(double mapSize, double res);
 
-  //Converts global ordinates (in m) to local ords
-  //Given the robots global position, convert the point global position to pixel point
+  /*! @brief Converts a Global coordinate to a pixel coordinate
+   *
+   *  @param reference The reference position to base our conversion off.
+   *                   This is usually the robot's position.
+   *  @param ordinate The coordinate to convert.
+   *  @return Point The converted point.
+   */
   cv::Point convertToPoint(TGlobalOrd reference, TGlobalOrd ordinate);
 
-  //Given a local map, determine if we can connect two ordinates
-  //Assumes m is the size defined by map size
+  /*! @brief Given a map, determine if two points can be connected.
+   *
+   *  This method determines if there are any obstacles between start and
+   *  end. The colour white in a map denotes known 'free space'. Anything
+   *  else is unknown or blocked.
+   *
+   *  @param m The map to look within.
+   *  @param start The starting position.
+   *  @param end The ending position.
+   *  @return bool - TRUE if there is nothing blocking the path between
+   *                 start and end.
+   */
   bool canConnect(cv::Mat &m, cv::Point start, cv::Point end);
 
-  //checks if a point is in the known map space
+  /*! @brief Checks if a point is within the known local map.
+   *
+   *  @param p The point to test for its place within the map.
+   *  @return bool - TRUE if it is within the map.
+   */
   bool inMap(cv::Point p);
 
-  //Draw prm overlay on local map
-  //For each point in map, draw a circle and a line to all the other points
+  /*! @brief Draws a Probablistic Road Map onto an existing map.
+   *
+   *  Will draw a blue circle to represent a node, and blue lines to represent
+   *  its connections to other nodes within the PRM.
+   *
+   *  @param m The map to overlay the PRM on top of. It is assumed that this
+   *           is a color enabled image (not greyscale).
+   *  @param prm A network of pixel points, and its connection to other points.
+   */
   void overlayPRM(cv::Mat &m, std::vector<std::pair<cv::Point, std::vector<cv::Point>>> prm);
 
-  //Overlay a red path on the map, it assumes the points are in order and connected to eachother
+  /*! @brief Draws a path onto an existing map.
+   *
+   *  Will draw a red circle to represent a node, and blue lines to represent
+   *  its connections to the next node in the path. Primarily used for showing
+   *  a path between a start and end goal.
+   *
+   *  @param m The map to overlay the PRM on top of. It is assumed that this
+   *           is a color enabled image (not greyscale).
+   *  @param path An ordered vector representing a path between points.
+   */
   void overlayPath(cv::Mat &m, std::vector<cv::Point> path);
 
+  /*! @brief Setter for updating the map size (square maps only).
+   *
+   *  @param mapSize The size of the overall map in meters.
+   */
   void setMapSize(double mapSize);
 
+  /*! @brief Setter for updating map resolution.
+   *
+   *  @param resolution The resolution of the local maps provided to this object.
+   */
   void setResolution(double resolution);
 
 private:
