@@ -2,6 +2,7 @@
 #include "../src/types.h"
 #include "../src/localmap.h"
 #include "../src/graph.h"
+#include "../src/globalmap.h"
 
 #include <opencv2/imgproc/imgproc.hpp>
 #include <image_transport/image_transport.h>
@@ -11,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+/*! PRE-BUILT MAPS !*/
 cv::Mat blankMap(void){
   //This map is completely white
   double mapSize = 20.0;
@@ -28,8 +30,20 @@ cv::Mat partionedMap(void){
   double res = 0.1;
   int pixels = (int) mapSize / res;
 
-  cv::Mat image(pixels, pixels, CV_8UC3, cv::Scalar(255, 255, 255));
+  cv::Mat image(pixels, pixels, CV_8UC1, cv::Scalar(255, 255, 255));
   cv::line(image,cv::Point(0,100),cv::Point(200,100),cv::Scalar(0,0,0),1);
+
+  return image;
+}
+
+cv::Mat partionedMap2(void){
+  //This map has two large rectangles
+  double mapSize = 20.0, res = 0.1;
+  int pixels = (int) mapSize / res;
+
+  cv::Mat image(pixels, pixels, CV_8UC1, cv::Scalar(255, 255, 255));
+  cv::rectangle(image, cv::Point(0,0),cv::Point(70, 180), cv::Scalar(0,0,0),1);
+  cv::rectangle(image, cv::Point(130,160),cv::Point(200, 200), cv::Scalar(0,0,0),1);
 
   return image;
 }
@@ -40,13 +54,15 @@ cv::Mat unknownMap(void){
   double res = 0.1;
   int pixels = (int) mapSize / res;
 
-  cv::Mat image(pixels, pixels, CV_8UC3, cv::Scalar(255, 255, 255));
+  cv::Mat image(pixels, pixels, CV_8UC1, cv::Scalar(255, 255, 255));
   cv::rectangle(image, cv::Point(10,10),cv::Point(70,75),cv::Scalar(125,125,125),-1);
   cv::rectangle(image, cv::Point(80,80),cv::Point(200,200),cv::Scalar(125,125,125),-1);
 
   return image;
 }
+/*! PRE-BUILT MAPS END !*/
 
+/*! TEST: Testing graphical connections between points on an opencv image !*/
 TEST(LocalMap, connectInEmptyMap){
   LocalMap l(20.0, 0.1);
 
@@ -73,6 +89,9 @@ TEST(LocalMap, connectInPartionedMap){
 
   //Diagonal
   ASSERT_FALSE(l.canConnect(img, cv::Point(0, 0), cv::Point(200, 200)));
+
+  //A Diagonal not intersecting the line
+  ASSERT_TRUE(l.canConnect(img, cv::Point(110, 90), cv::Point(150, 50)));
 }
 
 TEST(LocalMap, connectInUnknownMap){
@@ -96,7 +115,9 @@ TEST(LocalMap, connectOutsideMap){
   ASSERT_FALSE(l.canConnect(img, cv::Point(-100, 200), cv::Point(100, 100)));
   ASSERT_FALSE(l.canConnect(img, cv::Point(100, 200), cv::Point(-100, -100)));
 }
+/*! TEST: Testing graphical connections END !*/
 
+/*! TEST: Converting Points from globalOrds to local pixel points !*/
 TEST(LocalMap, convertPositivePoints){
   LocalMap l(20.0, 0.1);
 
@@ -133,12 +154,15 @@ TEST(LocalMap, convertPointsOnLine){
   EXPECT_EQ(cv::Point(50, 100), l.convertToPoint(ref, p3));
   EXPECT_EQ(cv::Point(100, 150), l.convertToPoint(ref, p4));
 }
+/*! TEST: Converting Points END !*/
 
+/*! TEST: Rendering PRM on an opencv image !*/
 TEST(LocalMap, renderPRM){
   LocalMap l(20.0, 0.1);
 
   cv::Point p1(50, 50), p2(150, 50), p3(50, 150), p4(100, 300);
-  cv::Mat m = unknownMap();
+  cv::Mat m;
+  cv::cvtColor(unknownMap(),m,CV_GRAY2RGB); //This must be a rgb image
 
   //Create map
   std::vector<std::pair<cv::Point, std::vector<cv::Point>>> prm;
@@ -165,7 +189,8 @@ TEST(LocalMap, renderPath){
   LocalMap l(20.0, 0.1);
 
   cv::Point p1(50, 50), p2(150, 50), p3(50, 150), p4(100, 300);
-  cv::Mat m = unknownMap();
+  cv::Mat m;
+  cv::cvtColor(unknownMap(),m,CV_GRAY2RGB); //This must be a rgb image
 
   //Create path
   std::vector<cv::Point> path = {p3, p1, p2};
@@ -203,6 +228,24 @@ TEST(ImageGen, CorrectDimensions){
 
   // Let's check the centre is now black (0)
   EXPECT_EQ(0, image.at<uchar>(pixels/2,pixels/2));
+}
+/*! TEST: Rendering PRM on an opencv image END !*/
+
+TEST(PrmGen, SimplePath){
+  cv::Mat map = partionedMap2();
+  cv::Mat colourMap;
+  cv::cvtColor(map, colourMap, CV_GRAY2BGR);
+
+  GlobalMap g(20.0, 0.1);
+  TGlobalOrd robot{10, 10}, goal{15, 15};
+
+  std::vector<TGlobalOrd> path = g.build(map, robot, goal);
+  EXPECT_EQ(2, path.size());
+
+  g.showOverlay(colourMap, robot, path);
+
+  cv::imshow("test", colourMap);
+  cv::waitKey(100000);
 }
 
 //These tests are based on the graph examples found

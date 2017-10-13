@@ -42,7 +42,7 @@ public:
    *  end. The colour white in a map denotes known 'free space'. Anything
    *  else is unknown or blocked.
    *
-   *  @param m The map to look within.
+   *  @param m The map to look within. Note, this must be a greyscale image!
    *  @param start The starting position.
    *  @param end The ending position.
    *  @return bool - TRUE if there is nothing blocking the path between
