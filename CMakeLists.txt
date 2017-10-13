@@ -140,7 +140,7 @@ include_directories(
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/prm_sim.cpp
 # )
-add_library(maps src/globalmap.cpp src/graph.cpp src/localmap.cpp)
+add_library(maps src/globalmap.cpp src/graph.cpp src/localmap.cpp src/types.h)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries

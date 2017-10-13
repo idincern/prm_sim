@@ -71,18 +71,55 @@ TEST(LocalMap, connectInPartionedMap){
   ASSERT_FALSE(l.canConnect(img, cv::Point(0, 0), cv::Point(200, 200)));
 }
 
-TEST(localMap, connectInUnknownMap){
+TEST(LocalMap, connectInUnknownMap){
   LocalMap l(20.0, 0.1);
 
   cv::Mat img = partionedMap();
   //Vertical
   ASSERT_FALSE(l.canConnect(img, cv::Point(100, 0), cv::Point(100, 200)));
 
-  //Horizontal -Two small points in known area of the map
+  //Horizontal -Two small points in known blank area of the map
   ASSERT_TRUE(l.canConnect(img, cv::Point(0, 50), cv::Point(200, 50)));
 
   //Diagonal
   ASSERT_FALSE(l.canConnect(img, cv::Point(0, 0), cv::Point(200, 200)));
+}
+
+TEST(LocalMap, convertPositivePoints){
+  LocalMap l(20.0, 0.1);
+
+  TGlobalOrd ref = {10, 10};
+  TGlobalOrd p1 = {5, 15}, p2 = {15, 15}, p3 = {5, 5}, p4 = {15, 5}, p5 = {10, -10};
+
+  EXPECT_EQ(cv::Point(50, 50), l.convertToPoint(ref, p1));
+  EXPECT_EQ(cv::Point(150, 50), l.convertToPoint(ref, p2));
+  EXPECT_EQ(cv::Point(50, 150), l.convertToPoint(ref, p3));
+  EXPECT_EQ(cv::Point(150, 150), l.convertToPoint(ref, p4));
+  EXPECT_EQ(cv::Point(100, 300), l.convertToPoint(ref, p5)); //Outside the map space
+}
+
+TEST(LocalMap, convertNegativePoints){
+  LocalMap l(20.0, 0.1);
+
+  TGlobalOrd ref = {-10, -10};
+  TGlobalOrd p1 = {-15, -5}, p2 = {-5, -5}, p3 = {-15, -15}, p4 = {-5, -15};
+
+  EXPECT_EQ(cv::Point(50, 50), l.convertToPoint(ref, p1));
+  EXPECT_EQ(cv::Point(150, 50), l.convertToPoint(ref, p2));
+  EXPECT_EQ(cv::Point(50, 150), l.convertToPoint(ref, p3));
+  EXPECT_EQ(cv::Point(150, 150), l.convertToPoint(ref, p4));
+}
+
+TEST(LocalMap, convertPointsOnLine){
+  LocalMap l(20.0, 0.1);
+
+  TGlobalOrd ref = {0, 0};
+  TGlobalOrd p1 = {0, 5}, p2 = {5, 0}, p3 = {-5, 0}, p4 = {0, -5};
+
+  EXPECT_EQ(cv::Point(100, 50), l.convertToPoint(ref, p1));
+  EXPECT_EQ(cv::Point(150, 100), l.convertToPoint(ref, p2));
+  EXPECT_EQ(cv::Point(50, 100), l.convertToPoint(ref, p3));
+  EXPECT_EQ(cv::Point(100, 150), l.convertToPoint(ref, p4));
 }
 
 TEST(ImageGen, CorrectDimensions){
@@ -95,17 +132,17 @@ TEST(ImageGen, CorrectDimensions){
   cv::Mat image = blankMap();
 
   // Let's check map size compared to allocation, just in case
-  ASSERT_EQ(pixels, image.rows);
-  ASSERT_EQ(pixels, image.cols);
+  EXPECT_EQ(pixels, image.rows);
+  EXPECT_EQ(pixels, image.cols);
 
   // Let's check the map is blank
-  ASSERT_EQ(255,image.at<uchar>(0,0));
+  EXPECT_EQ(255,image.at<uchar>(0,0));
 
   // Draw a link from top left to botom right corner
   cv::line(image,cv::Point(0,0),cv::Point(pixels,pixels),cv::Scalar(0,0,0),1);
 
   // Let's check the centre is now black (0)
-  ASSERT_EQ(0,image.at<uchar>(pixels/2,pixels/2));
+  EXPECT_EQ(0,image.at<uchar>(pixels/2,pixels/2));
 }
 
 //These tests are based on the graph examples found

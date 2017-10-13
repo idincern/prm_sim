@@ -9,14 +9,9 @@
 #define GLOBALMAP_H
 
 #include "graph.h"
+#include "types.h"
 #include <map>
 #include <utility>
-
-typedef struct
-{
-  double x;   /*!< x coordinate within global map */
-  double y;   /*!< y coordinate within global map */
-} TGlobalOrd;
 
 class GlobalMap
 {

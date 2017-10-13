@@ -9,14 +9,9 @@
 #define LOCALMAP_H
 
 #include "graph.h"
+#include "types.h"
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
-
-typedef struct
-{
-  int x;   /*!< x coordinate within local map (pixel) - This can be negative ??*/
-  int y;   /*!< y coordinate within global map (pixel) */
-} TLocalOrd; //Use Point instead??
 
 class LocalMap
 {
@@ -26,8 +21,8 @@ public:
   LocalMap(double mapSize, double res);
 
   //Converts global ordinates (in m) to local ords
-  //TODO: Consider putting this in a global types.h file
-  cv::Point convert(double x, double y);
+  //Given the robots global position, convert the point global position to pixel point
+  cv::Point convertToPoint(TGlobalOrd reference, TGlobalOrd ordinate);
 
   //Given a local map, determine if we can connect two ordinates
   //Assumes m is the size defined by map size
