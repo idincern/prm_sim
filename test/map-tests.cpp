@@ -42,8 +42,8 @@ cv::Mat partionedMap2(void){
   int pixels = (int) mapSize / res;
 
   cv::Mat image(pixels, pixels, CV_8UC1, cv::Scalar(255, 255, 255));
-  cv::rectangle(image, cv::Point(0,0),cv::Point(70, 180), cv::Scalar(0,0,0),1);
-  cv::rectangle(image, cv::Point(130,160),cv::Point(200, 200), cv::Scalar(0,0,0),1);
+  cv::rectangle(image, cv::Point(0,0),cv::Point(70, 180), cv::Scalar(125,125,125),-1);
+  cv::rectangle(image, cv::Point(130,160),cv::Point(200, 200), cv::Scalar(125,125,125),-1);
 
   return image;
 }
@@ -236,13 +236,29 @@ TEST(PrmGen, SimplePath){
   cv::Mat colourMap;
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
+  TGlobalOrd robot{10, 10}, goal{15, 15}, start{5,5};
   GlobalMap g(20.0, 0.1);
-  TGlobalOrd robot{10, 10}, goal{15, 15};
+  g.setReference(robot);
 
   std::vector<TGlobalOrd> path = g.build(map, robot, goal);
   EXPECT_EQ(2, path.size());
 
-  g.showOverlay(colourMap, robot, path);
+  g.showOverlay(colourMap, path);
+}
+
+TEST(PrmGen, NoPath){
+  cv::Mat map = partionedMap2();
+  cv::Mat colourMap;
+  cv::cvtColor(map, colourMap, CV_GRAY2BGR);
+
+  GlobalMap g(20.0, 0.1);
+  TGlobalOrd robot{10, 10}, start{1, 1}, goal{10, 19};
+  g.setReference(robot);
+
+  std::vector<TGlobalOrd> path = g.build(map, start, goal);
+  EXPECT_EQ(0, path.size());
+
+  g.showOverlay(colourMap, path);
 
   cv::imshow("test", colourMap);
   cv::waitKey(100000);

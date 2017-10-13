@@ -12,19 +12,24 @@
 #include <iostream>
 #include <string>
 #include <math.h>
+#include <random>
 #include <iostream>
+#include <thread>
+#include <chrono>
 
 static const unsigned int MaxGraphDensity = 5; /*!< The max amount of neighbours a vertex in the graph can have */
 
 GlobalMap::GlobalMap(double mapSize, double mapRes):
   graph_(Graph(MaxGraphDensity)), lmap_(LocalMap(mapSize, mapRes)), nextVertexId_(0)
 {
+  reference_.x = 0;
+  reference_.y = 0;
 }
 
-std::vector<cv::Point> GlobalMap::convertPath(TGlobalOrd ref, std::vector<TGlobalOrd> path){
+std::vector<cv::Point> GlobalMap::convertPath(std::vector<TGlobalOrd> path){
   std::vector<cv::Point> pointPath;
   for(auto const &ord: path){
-    pointPath.push_back(lmap_.convertToPoint(ref, ord));
+    pointPath.push_back(lmap_.convertToPoint(reference_, ord));
   }
 
   return pointPath;
@@ -41,18 +46,18 @@ std::vector<TGlobalOrd> GlobalMap::convertPath(std::vector<vertex> path){
   return ordPath;
 }
 
-std::vector<std::pair<cv::Point, std::vector<cv::Point>>> GlobalMap::constructPRM(TGlobalOrd ref)
+std::vector<std::pair<cv::Point, std::vector<cv::Point>>> GlobalMap::constructPRM()
 {
   std::vector<std::pair<cv::Point, std::vector<cv::Point>>> prm;
   std::map<vertex, edges> nodes = graph_.container();
 
   for(auto const &v: nodes){
     std::pair<cv::Point, std::vector<cv::Point>> pair;
-    cv::Point vPoint = lmap_.convertToPoint(ref, vertexLUT_[v.first]);
+    cv::Point vPoint = lmap_.convertToPoint(reference_, vertexLUT_[v.first]);
     pair.first = vPoint;
 
     for(auto const &neighbour: v.second){
-      pair.second.push_back(lmap_.convertToPoint(ref, vertexLUT_[neighbour.first]));
+      pair.second.push_back(lmap_.convertToPoint(reference_, vertexLUT_[neighbour.first]));
     }
 
     prm.push_back(pair);
@@ -69,39 +74,59 @@ double distance(TGlobalOrd p1, TGlobalOrd p2){
 }
 
 //Takes a colour image
-void GlobalMap::showOverlay(cv::Mat &m, TGlobalOrd ref, std::vector<TGlobalOrd> path){
-  std::vector<cv::Point> pPath = convertPath(ref, path);
+void GlobalMap::showOverlay(cv::Mat &m, std::vector<TGlobalOrd> path){
+  std::vector<cv::Point> pPath = convertPath(path);
 
   //Overlay onto map...
-  lmap_.overlayPRM(m, constructPRM(ref));
+  lmap_.overlayPRM(m, constructPRM());
   lmap_.overlayPath(m, pPath);
 }
 
-//m is greyscale
-std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd robotPos, TGlobalOrd goal)
+void GlobalMap::setReference(const TGlobalOrd reference)
 {
-  vertex vStart, vGoal;     //Vertex representation of the global ords
-  cv::Point pStart, pGoal;  //Pixel point representation of the global ords
+  reference_.x = reference.x;
+  reference_.y = reference.y;
+}
 
-  //Check that coordiantes are on the global map, if not - add to network
-  if(!existsAsVertex(robotPos)){
-    vStart = nextVertexId();
-    graph_.addVertex(vStart);
-    vertexLUT_.insert(std::pair<vertex, TGlobalOrd>(vStart, robotPos));
+//Given an existing node, attempt to connect to other points within the network
+void GlobalMap::connectToExistingNodes(cv::Mat &m, vertex node){
+  cv::Point currentPos = lmap_.convertToPoint(reference_, vertexLUT_[node]);
+
+  for(auto const &vertex: vertexLUT_){
+    if(vertex.first == node){
+      continue;
+    }
+
+    cv::Point vPoint = lmap_.convertToPoint(reference_, vertex.second);
+    if(lmap_.canConnect(m, currentPos, vPoint)){
+      graph_.addEdge(node, vertex.first, distance(vertexLUT_[node], vertex.second));
+    }
+  }
+}
+
+vertex GlobalMap::findOrAdd(TGlobalOrd ordinate){
+  vertex v;
+  if(existsAsVertex(ordinate)){
+    lookup(ordinate, v);
   } else {
-    lookup(robotPos, vStart); //it should exist, we just checked!
+    v = nextVertexId();
+    graph_.addVertex(v);
+    vertexLUT_.insert(std::make_pair(v, ordinate));
   }
 
-  if(!existsAsVertex(goal)){
-    vGoal = nextVertexId();
-    graph_.addVertex(vGoal);
-    vertexLUT_.insert(std::pair<vertex, TGlobalOrd>(vGoal, goal));
-  } else {
-    lookup(goal, vGoal); //it should exist, we just checked!
-  }
+  return v;
+}
 
-  pStart = lmap_.convertToPoint(robotPos, robotPos);
-  pGoal = lmap_.convertToPoint(robotPos, goal);
+//m is greyscale
+std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd start, TGlobalOrd goal)
+{
+  //Vertex representation of the global ords
+  vertex vStart = findOrAdd(start);
+  vertex vGoal = findOrAdd(goal);
+
+  //Pixel point representation of the ordinates
+  cv::Point pStart = lmap_.convertToPoint(reference_, start);
+  cv::Point pGoal = lmap_.convertToPoint(reference_, goal);
 
   //Check if there is already a path between the two points
   std::vector<vertex> vPath = graph_.shortestPath(vStart, vGoal);
@@ -109,19 +134,36 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd robotPos, TGloba
     return convertPath(vPath);
   }
 
-  //Check if we can add an edge between robot and goal before building
-  if(lmap_.canConnect(m, pStart, pGoal)){
+  //Check if we can add an edge between start and goal before building process
+  connectToExistingNodes(m, vStart);
+  connectToExistingNodes(m, vGoal);
+  vPath = graph_.shortestPath(vStart, vGoal);
+  if(vPath.size() > 0){
+    return convertPath(vPath);
+  }
 
-    //Will need to check its neighbour limit hasn't been reached
-    graph_.addEdge(vStart, vGoal, distance(robotPos, goal));
+  for(int i=0; i < 1000; i++){
+    TGlobalOrd randomOrd;
+    //Generate random nodes...
+    std::default_random_engine generator(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+    std::uniform_real_distribution<double> distribution(-20, 20);
 
-    //Check if there is already a path between the two points
-    std::vector<vertex> vPath = graph_.shortestPath(vStart, vGoal);
+    //round to 1 decimal place
+    randomOrd.x = std::round((distribution(generator) * 10.0))/10.0;
+    randomOrd.y = std::round((distribution(generator) * 10.0))/10.0;
+
+    vertex v = findOrAdd(randomOrd);
+    connectToExistingNodes(m, v);
+    vPath = graph_.shortestPath(vStart, vGoal);
     if(vPath.size() > 0){
       return convertPath(vPath);
     }
   }
 
+
+  //Attempt to connect to other nodes
+
+  //If node is grey we can add, otherwise, if its black, then no!
 
 
   //If none of the above
