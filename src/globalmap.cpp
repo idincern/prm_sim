@@ -15,13 +15,14 @@
 static const unsigned int MaxGraphDensity = 5;  /*!< The max amount of neighbours a vertex in the graph can have */
 static const double MaxDistance = 2.5;          /*!< The max distance between two verticies in the graph */
 
-GlobalMap::GlobalMap(double mapSize, double mapRes):
+GlobalMap::GlobalMap(double mapSize, double mapRes, double robotDiameter):
   graph_(Graph(MaxGraphDensity, MaxDistance)), lmap_(LocalMap(mapSize, mapRes))
 {
   mapSize_ = mapSize;
   nextVertexId_ = 0;
   reference_.x = 0;
   reference_.y = 0;
+  robotDiameter_ = robotDiameter;
 }
 
 std::vector<cv::Point> GlobalMap::convertPath(std::vector<TGlobalOrd> path){
@@ -112,7 +113,8 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd start, TGlobalOr
   cv::Point pStart, pGoal;  //Pixel point representation of the ordinates
   std::vector<TGlobalOrd> path;
 
-  //TODO: Expand config space based on robot size!!!!
+  //Expand config space based on the robot's diameter
+  lmap_.expandConfigSpace(m, robotDiameter_);
 
   //If either does not exist as vertcies in graph already, we must perform some setup.
   if(!existsAsVertex(start) || !existsAsVertex(goal)){

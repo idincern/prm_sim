@@ -20,7 +20,7 @@ class GlobalMap
 {
 public:
   //Map size in meters
-  GlobalMap(double mapSize, double mapRes);
+  GlobalMap(double mapSize, double mapRes, double robotDiameter);
 
   //Returns a path of ordinates between the two ords
   std::vector<TGlobalOrd> build(cv::Mat &m, TGlobalOrd start, TGlobalOrd goal);
@@ -41,6 +41,7 @@ private:
   vertex nextVertexId_;                     /*!< Used for generating unique vertex ids for coordiantes... TODO: make atomic?? */
   TGlobalOrd reference_;                    /*!< Reference ordinate for the local map, this is usually the robot position */
   double mapSize_;                          /*!< The mapSize in m */
+  double robotDiameter_;                    /*!< The diameter of the robot in m */
 
   //TODO: MAKE REF an internal variable?
 

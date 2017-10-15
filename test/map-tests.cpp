@@ -297,7 +297,7 @@ TEST(PrmGen, SimplePath){
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
   TGlobalOrd robot{10, 10}, goal{15, 15}, start{5,5};
-  GlobalMap g(20.0, 0.1);
+  GlobalMap g(20.0, 0.1, 0.2);
   g.setReference(robot);
 
   std::vector<TGlobalOrd> path = g.build(map, robot, goal);
@@ -311,7 +311,7 @@ TEST(PrmGen, ComplicatedPath){
   cv::Mat colourMap;
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
-  GlobalMap g(20.0, 0.1);
+  GlobalMap g(20.0, 0.1, 0.2);
   TGlobalOrd robot{10, 10}, start{1, 1}, goal{10, 19};
   g.setReference(robot);
 
@@ -330,7 +330,7 @@ TEST(PrmGen, Hallway){
   cv::Mat colourMap;
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
-  GlobalMap g(20.0, 0.1);
+  GlobalMap g(20.0, 0.1, 0.2);
   TGlobalOrd robot{10, 10}, start{4, 2}, goal{19, 14};
   g.setReference(robot);
 
@@ -344,7 +344,7 @@ TEST(PrmGen, NoPath){
   cv::Mat colourMap;
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
-  GlobalMap g(20.0, 0.1);
+  GlobalMap g(20.0, 0.1, 0.2);
   TGlobalOrd robot{10, 10}, start{1, 5}, goal{10, 19};
   g.setReference(robot);
 
