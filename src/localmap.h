@@ -57,6 +57,14 @@ public:
    */
   bool inMap(cv::Point p);
 
+  /*! @brief Checks if a point is within free space.
+   *
+   *  @param m A greyscale map image.
+   *  @param p The point to test for within the map.
+   *  @return bool - TRUE if the point is accessible.
+   */
+  bool isAccessible(cv::Mat &m, cv::Point p);
+
   /*! @brief Draws a Probablistic Road Map onto an existing map.
    *
    *  Will draw a blue circle to represent a node, and blue lines to represent

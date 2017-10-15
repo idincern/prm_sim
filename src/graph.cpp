@@ -16,7 +16,8 @@
 #include <iostream>
 #include <string>
 
-Graph::Graph(unsigned int maxNeighbours): maxNeighbours_(maxNeighbours)
+Graph::Graph(unsigned int maxNeighbours, weight maxWeight):
+  maxNeighbours_(maxNeighbours), maxWeight_(maxWeight)
 {
 }
 
@@ -38,10 +39,13 @@ bool Graph::addEdge(const vertex v, const vertex u, const weight w)
     return false; //All verticies must be present when adding an edge
   }
 
-  //TODO: Determine correct behaviour
   //Check the verticies are not at their neighbour limits
   if(container_.find(v)->second.size() >= maxNeighbours_ ||
      container_.find(u)->second.size() >= maxNeighbours_){
+    return false;
+  }
+
+  if(w > maxWeight_){
     return false;
   }
 

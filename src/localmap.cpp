@@ -42,6 +42,10 @@ cv::Point LocalMap::convertToPoint(TGlobalOrd reference, TGlobalOrd ordinate){
   return cv::Point(convertedX, convertedY);
 }
 
+//TGlobalOrd LocalMap::convertToOrd(TGlobalOrd reference, cv::Point point){
+//  //TODO
+//}
+
 bool LocalMap::canConnect(cv::Mat &m, cv::Point start, cv::Point end){
   //Do a bounds check
   if(!inMap(start) || !inMap(end)){
@@ -52,9 +56,12 @@ bool LocalMap::canConnect(cv::Mat &m, cv::Point start, cv::Point end){
   //each pixel is white = free space
   cv::LineIterator line(m, start, end);
   for(int i = 0; i < line.count; i++, line++){
-    if(m.at<uchar>(line.pos()) != 255){
+    if(!isAccessible(m, line.pos())){
       return false;
     }
+//    if(m.at<uchar>(line.pos()) != 255){
+//      return false;
+//    }
   }
 
   return true;
@@ -76,7 +83,7 @@ void LocalMap::overlayPRM(cv::Mat &m, std::vector<std::pair<cv::Point, std::vect
 
 void LocalMap::overlayPath(cv::Mat &m, std::vector<cv::Point> path){
   if(path.size() < 1){
-    return; //No point drawing an empty path
+    return; //We don't want an out of bounds error from below
   }
 
   cv::Point previousNode = path.at(0);
@@ -89,6 +96,15 @@ void LocalMap::overlayPath(cv::Mat &m, std::vector<cv::Point> path){
     cv::line(m, node, previousNode, cv::Scalar(0,0,255),1);
     previousNode = node;
   }
+}
+
+bool LocalMap::isAccessible(cv::Mat &m, cv::Point p){
+  if(!inMap(p)){
+    return false;
+  }
+
+  //Assumes m is greyscale.
+  return (m.at<uchar>(p) == 255);
 }
 
 bool LocalMap::inMap(cv::Point p){

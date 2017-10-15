@@ -20,7 +20,7 @@
 static const unsigned int MaxGraphDensity = 5; /*!< The max amount of neighbours a vertex in the graph can have */
 
 GlobalMap::GlobalMap(double mapSize, double mapRes):
-  graph_(Graph(MaxGraphDensity)), lmap_(LocalMap(mapSize, mapRes)), nextVertexId_(0)
+  graph_(Graph(MaxGraphDensity, 4)), lmap_(LocalMap(mapSize, mapRes)), nextVertexId_(0)
 {
   reference_.x = 0;
   reference_.y = 0;

@@ -29,7 +29,7 @@ public:
    *
    *  @param maxNeighbours The max amount of neighbours a vertex can have.
    */
-  Graph(unsigned int maxNeighbours);
+  Graph(unsigned int maxNeighbours, weight maxWeight);
 
   /*! @brief Adds a vertex to the graph.
    *
@@ -69,6 +69,7 @@ public:
   std::map<vertex, edges> container() const;
 
 private:
+  weight maxWeight_;                   /*!< The max weighting an edge is allowed to have */
   unsigned int maxNeighbours_;         /*!< A vertex has a max amount of neighbours */
   std::map<vertex, edges> container_;  /*!< A container of all verticies and their neighbours (edges) */
 
