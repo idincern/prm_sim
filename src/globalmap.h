@@ -32,6 +32,8 @@ public:
 
   void setReference(const TGlobalOrd reference);
 
+  void setMapSize(double mapSize);
+
 private:
   Graph graph_;                             /*!< A graph representation of the roadmap network */
   LocalMap lmap_;                           /*!< An object for interacting with the ogMap provided to this object */

@@ -60,6 +60,20 @@ cv::Mat unknownMap(void){
 
   return image;
 }
+
+cv::Mat hallway(void){
+  //Contains two 'unknown' (grey) areas on the map
+  double mapSize = 20.0;
+  double res = 0.1;
+  int pixels = (int) mapSize / res;
+
+  cv::Mat image(pixels, pixels, CV_8UC1, cv::Scalar(125, 125, 125));
+  cv::rectangle(image, cv::Point(20,20),cv::Point(60, 200),cv::Scalar(255,255,255),-1);
+  cv::rectangle(image, cv::Point(60,20),cv::Point(200,100),cv::Scalar(255,255,255),-1);
+
+  return image;
+}
+
 /*! PRE-BUILT MAPS END !*/
 
 /*! TEST: Testing graphical connections between points on an opencv image !*/
@@ -268,6 +282,7 @@ TEST(PrmGen, SimplePath){
 
 TEST(PrmGen, ComplicatedPath){
   //The start and goal locations are much more seperated out
+  //There is a chance that this will fail... TODO: FIX?
   cv::Mat map = partionedMap2();
   cv::Mat colourMap;
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
@@ -279,10 +294,23 @@ TEST(PrmGen, ComplicatedPath){
   std::vector<TGlobalOrd> path = g.build(map, start, goal);
 
   //VISUAL DISPLAY...
-//    g.showOverlay(colourMap, path);
-//    cv::imshow("test", colourMap);
-//    cv::waitKey(10000);
+  //g.showOverlay(colourMap, path);
+  //cv::imshow("test", colourMap);
+  //cv::waitKey(10000);
 
+  ASSERT_TRUE(path.size() > 0);
+}
+
+TEST(PrmGen, Hallway){
+  cv::Mat map = hallway();
+  cv::Mat colourMap;
+  cv::cvtColor(map, colourMap, CV_GRAY2BGR);
+
+  GlobalMap g(20.0, 0.1);
+  TGlobalOrd robot{10, 10}, start{4, 2}, goal{19, 14};
+  g.setReference(robot);
+
+  std::vector<TGlobalOrd> path = g.build(map, start, goal);
   ASSERT_TRUE(path.size() > 0);
 }
 

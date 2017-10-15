@@ -17,6 +17,11 @@
 #include <thread>
 #include <chrono>
 
+#include <opencv2/imgproc/imgproc.hpp>
+#include <image_transport/image_transport.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <cv_bridge/cv_bridge.h>
+
 static const unsigned int MaxGraphDensity = 5;  /*!< The max amount of neighbours a vertex in the graph can have */
 static const double MaxDistance = 2.5;          /*!< The max distance between two verticies in the graph */
 
@@ -188,8 +193,6 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd start, TGlobalOr
       path = convertPath(vPath);
       foundPath = true;
     }
-
-
   }
 
   return path;
@@ -238,4 +241,10 @@ bool GlobalMap::lookup(TGlobalOrd ord, vertex &v){
 void GlobalMap::setReference(const TGlobalOrd reference) {
   reference_.x = reference.x;
   reference_.y = reference.y;
+}
+
+void GlobalMap::setMapSize(double mapSize)
+{
+  mapSize_ = mapSize;
+  lmap_.setMapSize(mapSize);
 }

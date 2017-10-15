@@ -167,7 +167,7 @@ add_executable(main src/main.cpp)
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-target_link_libraries(main maps)
+target_link_libraries(main maps ${catkin_LIBRARIES})
 
 #############
 ## Install ##
