@@ -131,6 +131,20 @@ TEST(LocalMap, convertPositivePoints){
   EXPECT_EQ(cv::Point(100, 300), l.convertToPoint(ref, p5)); //Outside the map space
 }
 
+TEST(LocalMap, convertDecimalPoints){
+  LocalMap l (20.0, 0.1);
+  TGlobalOrd ref = {10, 10};
+  TGlobalOrd p1 = {5.1, 15.2};
+  TGlobalOrd p2 = {5.15, 15.23}; //This will round to 5.2, 15.2
+  EXPECT_EQ(cv::Point(51, 48), l.convertToPoint(ref, p1));
+  EXPECT_EQ(cv::Point(52, 48), l.convertToPoint(ref, p2));
+
+  LocalMap l2(20.0, 0.1);
+  ref = {-10, -10};
+  p1 = {-15.2, -5.1};
+  EXPECT_EQ(cv::Point(48, 51), l.convertToPoint(ref, p1));
+}
+
 TEST(LocalMap, convertNegativePoints){
   LocalMap l(20.0, 0.1);
 
@@ -165,12 +179,20 @@ TEST(LocalMap, renderPRM){
   cv::cvtColor(unknownMap(),m,CV_GRAY2RGB); //This must be a rgb image
 
   //Create map
-  std::vector<std::pair<cv::Point, std::vector<cv::Point>>> prm;
+  std::vector<std::pair<cv::Point, cv::Point>> prm;
+  prm.push_back(std::make_pair(p1, p2));
+  prm.push_back(std::make_pair(p1, p3));
+  prm.push_back(std::make_pair(p1, p4));
 
-  prm.push_back(std::make_pair(p1, std::vector<cv::Point>{p2, p3, p4}));
-  prm.push_back(std::make_pair(p2, std::vector<cv::Point>{p1, p3, p4}));
-  prm.push_back(std::make_pair(p3, std::vector<cv::Point>{p1, p2}));
-  prm.push_back(std::make_pair(p4, std::vector<cv::Point>{p1, p2}));
+  prm.push_back(std::make_pair(p2, p1));
+  prm.push_back(std::make_pair(p2, p3));
+  prm.push_back(std::make_pair(p2, p4));
+
+  prm.push_back(std::make_pair(p3, p1));
+  prm.push_back(std::make_pair(p3, p2));
+
+  prm.push_back(std::make_pair(p4, p1));
+  prm.push_back(std::make_pair(p4, p2));
 
   l.overlayPRM(m, prm);
 
@@ -242,29 +264,41 @@ TEST(PrmGen, SimplePath){
 
   std::vector<TGlobalOrd> path = g.build(map, robot, goal);
   ASSERT_TRUE(path.size() > 0);
+}
 
+TEST(PrmGen, ComplicatedPath){
+  //The start and goal locations are much more seperated out
+  cv::Mat map = partionedMap2();
+  cv::Mat colourMap;
+  cv::cvtColor(map, colourMap, CV_GRAY2BGR);
+
+  GlobalMap g(20.0, 0.1);
+  TGlobalOrd robot{10, 10}, start{1, 1}, goal{10, 19};
+  g.setReference(robot);
+
+  std::vector<TGlobalOrd> path = g.build(map, start, goal);
+
+  //VISUAL DISPLAY...
 //    g.showOverlay(colourMap, path);
-
 //    cv::imshow("test", colourMap);
-//    cv::waitKey(100000);
+//    cv::waitKey(10000);
+
+  ASSERT_TRUE(path.size() > 0);
 }
 
 TEST(PrmGen, NoPath){
-//  cv::Mat map = partionedMap2();
-//  cv::Mat colourMap;
-//  cv::cvtColor(map, colourMap, CV_GRAY2BGR);
+  //The start is in an unreachable section of the map
+  cv::Mat map = partionedMap2();
+  cv::Mat colourMap;
+  cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
-//  GlobalMap g(20.0, 0.1);
-//  TGlobalOrd robot{10, 10}, start{1, 1}, goal{10, 19};
-//  g.setReference(robot);
+  GlobalMap g(20.0, 0.1);
+  TGlobalOrd robot{10, 10}, start{1, 5}, goal{10, 19};
+  g.setReference(robot);
 
-//  std::vector<TGlobalOrd> path = g.build(map, start, goal);
-//  EXPECT_EQ(0, path.size());
+  std::vector<TGlobalOrd> path = g.build(map, start, goal);
 
-//  g.showOverlay(colourMap, path);
-
-//  cv::imshow("test", colourMap);
-//  cv::waitKey(100000);
+  EXPECT_EQ(0, path.size());
 }
 
 //These tests are based on the graph examples found

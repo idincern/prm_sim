@@ -17,11 +17,14 @@
 #include <thread>
 #include <chrono>
 
-static const unsigned int MaxGraphDensity = 5; /*!< The max amount of neighbours a vertex in the graph can have */
+static const unsigned int MaxGraphDensity = 5;  /*!< The max amount of neighbours a vertex in the graph can have */
+static const double MaxDistance = 2.5;          /*!< The max distance between two verticies in the graph */
 
 GlobalMap::GlobalMap(double mapSize, double mapRes):
-  graph_(Graph(MaxGraphDensity, 4)), lmap_(LocalMap(mapSize, mapRes)), nextVertexId_(0)
+  graph_(Graph(MaxGraphDensity, MaxDistance)), lmap_(LocalMap(mapSize, mapRes))
 {
+  mapSize_ = mapSize;
+  nextVertexId_ = 0;
   reference_.x = 0;
   reference_.y = 0;
 }
@@ -46,21 +49,26 @@ std::vector<TGlobalOrd> GlobalMap::convertPath(std::vector<vertex> path){
   return ordPath;
 }
 
-std::vector<std::pair<cv::Point, std::vector<cv::Point>>> GlobalMap::constructPRM()
+std::vector<std::pair<cv::Point, cv::Point>> GlobalMap::constructPRM()
 {
-  std::vector<std::pair<cv::Point, std::vector<cv::Point>>> prm;
+  std::vector<std::pair<cv::Point, cv::Point>> prm;
   std::map<vertex, edges> nodes = graph_.container();
 
-  for(auto const &v: nodes){
-    std::pair<cv::Point, std::vector<cv::Point>> pair;
-    cv::Point vPoint = lmap_.convertToPoint(reference_, vertexLUT_[v.first]);
-    pair.first = vPoint;
+  for(auto const &node: nodes){
+    cv::Point pCurrent = lmap_.convertToPoint(reference_, vertexLUT_[node.first]);
 
-    for(auto const &neighbour: v.second){
-      pair.second.push_back(lmap_.convertToPoint(reference_, vertexLUT_[neighbour.first]));
+    for(auto const &neighbour: node.second){
+      cv::Point pNeighbour = lmap_.convertToPoint(reference_, vertexLUT_[neighbour.first]);
+
+      //Ensure that we are only adding node pairs to the prm that are unique! (no two way connections)
+      auto it = std::find_if(prm.begin(), prm.end(),
+          [pCurrent, pNeighbour](const std::pair<cv::Point, cv::Point>& element){ return
+            element.first == pNeighbour && element.second == pCurrent;});
+
+      if(it == prm.end()){
+        prm.push_back(std::make_pair(pCurrent, pNeighbour));
+      }
     }
-
-    prm.push_back(pair);
   }
 
   return prm;
@@ -82,12 +90,6 @@ void GlobalMap::showOverlay(cv::Mat &m, std::vector<TGlobalOrd> path){
   lmap_.overlayPath(m, pPath);
 }
 
-void GlobalMap::setReference(const TGlobalOrd reference)
-{
-  reference_.x = reference.x;
-  reference_.y = reference.y;
-}
-
 //Given an existing node, attempt to connect to other points within the network
 void GlobalMap::connectToExistingNodes(cv::Mat &m, vertex node){
   cv::Point currentPos = lmap_.convertToPoint(reference_, vertexLUT_[node]);
@@ -104,29 +106,31 @@ void GlobalMap::connectToExistingNodes(cv::Mat &m, vertex node){
   }
 }
 
-vertex GlobalMap::findOrAdd(TGlobalOrd ordinate){
-  vertex v;
-  if(existsAsVertex(ordinate)){
-    lookup(ordinate, v);
-  } else {
-    v = nextVertexId();
-    graph_.addVertex(v);
-    vertexLUT_.insert(std::make_pair(v, ordinate));
-  }
 
-  return v;
-}
 
 //m is greyscale
 std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd start, TGlobalOrd goal)
 {
-  //Vertex representation of the global ords
-  vertex vStart = findOrAdd(start);
-  vertex vGoal = findOrAdd(goal);
+  vertex vStart, vGoal;     //Vertex representation of the global ords
+  cv::Point pStart, pGoal;  //Pixel point representation of the ordinates
+  std::vector<TGlobalOrd> path;
 
-  //Pixel point representation of the ordinates
-  cv::Point pStart = lmap_.convertToPoint(reference_, start);
-  cv::Point pGoal = lmap_.convertToPoint(reference_, goal);
+  //TODO: Expand config space based on robot size!!!!
+
+  //If either does not exist as vertcies in graph already, we must perform some setup.
+  if(!existsAsVertex(start) || !existsAsVertex(goal)){
+    pStart = lmap_.convertToPoint(reference_, start);
+    pGoal = lmap_.convertToPoint(reference_, goal);
+
+    //First check that both points are accessible within the current map...
+    if(!lmap_.isAccessible(m, pStart) || !lmap_.isAccessible(m, pGoal)){
+      return path;
+    }
+
+    //Find or add the verticies to/in our graph
+    vStart = findOrAdd(start);
+    vGoal = findOrAdd(goal);
+  }
 
   //Check if there is already a path between the two points
   std::vector<vertex> vPath = graph_.shortestPath(vStart, vGoal);
@@ -142,40 +146,53 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd start, TGlobalOr
     return convertPath(vPath);
   }
 
-  for(int i=0; i < 1000; i++){
+  bool foundPath = false;
+  unsigned int safetyCnt = 0;
+
+  while(!foundPath){
+    safetyCnt++;
+
+    if(safetyCnt == 1000){
+      //TODO: Determine if this is necessary?
+      break;
+    }
+
     TGlobalOrd randomOrd;
-    //Generate random nodes...
-    std::default_random_engine generator(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-    std::uniform_real_distribution<double> distribution(-20, 20);
+    //Generate random ords within the map space...
+    std::default_random_engine generator(std::chrono::duration_cast<std::chrono::nanoseconds>
+                                         (std::chrono::system_clock::now().time_since_epoch()).count());
+
+    //TODO: generate points only in reference area??
+    //TODO: Check if good.
+    std::uniform_real_distribution<double> xDist(reference_.x - (mapSize_/2), reference_.x + (mapSize_/2));
+    std::uniform_real_distribution<double> yDist(reference_.y - (mapSize_/2), reference_.y + (mapSize_/2));
 
     //round to 1 decimal place
-    randomOrd.x = std::round((distribution(generator) * 10.0))/10.0;
-    randomOrd.y = std::round((distribution(generator) * 10.0))/10.0;
+    randomOrd.x = std::round((xDist(generator) * 10.0))/10.0;
+    randomOrd.y = std::round((yDist(generator) * 10.0))/10.0;
 
-    vertex v = findOrAdd(randomOrd);
-    connectToExistingNodes(m, v);
+    cv::Point pRand = lmap_.convertToPoint(reference_, randomOrd);
+
+    //Only add ords that are accessible
+    if(!lmap_.isAccessible(m, pRand)){
+      continue;
+    }
+
+    //See if vertex exists in graph already otherwise, attempt to connect to other verticies
+    vertex vRand = findOrAdd(randomOrd);
+    connectToExistingNodes(m, vRand);
+
+    //Check for path
     vPath = graph_.shortestPath(vStart, vGoal);
     if(vPath.size() > 0){
-      return convertPath(vPath);
+      path = convertPath(vPath);
+      foundPath = true;
     }
+
+
   }
 
-
-  //Attempt to connect to other nodes
-
-  //If node is grey we can add, otherwise, if its black, then no!
-
-
-  //If none of the above
-    //Generate random node within global map
-    //Check its not already vertex
-    //Add to graph
-    //Attempt to connect edge to start and goal respectively
-    //Calcualte path
-    //Attempt to connect edge to other points in graph that aren't current, start, goal
-    //Calculate path
-
-  return std::vector<TGlobalOrd>();
+  return path;
 }
 
 bool GlobalMap::existsAsVertex(TGlobalOrd ord){
@@ -186,6 +203,19 @@ bool GlobalMap::existsAsVertex(TGlobalOrd ord){
   }
 
   return false;
+}
+
+vertex GlobalMap::findOrAdd(TGlobalOrd ordinate){
+  vertex v;
+  if(existsAsVertex(ordinate)){
+    lookup(ordinate, v);
+  } else {
+    v = nextVertexId();
+    graph_.addVertex(v);
+    vertexLUT_.insert(std::make_pair(v, ordinate));
+  }
+
+  return v;
 }
 
 vertex GlobalMap::nextVertexId(){
@@ -203,4 +233,9 @@ bool GlobalMap::lookup(TGlobalOrd ord, vertex &v){
   }
 
   return false;
+}
+
+void GlobalMap::setReference(const TGlobalOrd reference) {
+  reference_.x = reference.x;
+  reference_.y = reference.y;
 }

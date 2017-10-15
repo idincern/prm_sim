@@ -38,6 +38,7 @@ private:
   std::map<vertex, TGlobalOrd> vertexLUT_;  /*!< A look up table to convert a vertex to coordinate within map */ //TODO: Rename as network??
   vertex nextVertexId_;                     /*!< Used for generating unique vertex ids for coordiantes... TODO: make atomic?? */
   TGlobalOrd reference_;                    /*!< Reference ordinate for the local map, this is usually the robot position */
+  double mapSize_;                          /*!< The mapSize in m */
 
   //TODO: MAKE REF an internal variable?
 
@@ -57,7 +58,7 @@ private:
   std::vector<TGlobalOrd> convertPath(std::vector<vertex> path);
 
   //Consruct a PRM network for overlay later
-  std::vector<std::pair<cv::Point, std::vector<cv::Point>>> constructPRM();
+  std::vector<std::pair<cv::Point, cv::Point>> constructPRM();
 
   //connect node to all existing verticies
   void connectToExistingNodes(cv::Mat &m, vertex node);

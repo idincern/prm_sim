@@ -33,8 +33,19 @@ public:
    *                   This is usually the robot's position.
    *  @param ordinate The coordinate to convert.
    *  @return Point The converted point.
+   *
+   *  @note The ordinates x & y will round to the nearest 1 decimal place.
    */
   cv::Point convertToPoint(TGlobalOrd reference, TGlobalOrd ordinate);
+
+  /*! @brief Converts a pixel coordinate to a global coordinate.
+   *
+   *  @param reference The reference position to base our conversion off.
+   *                   This is usually the robot's position.
+   *  @param point The pixel coordinate to convert.
+   *  @return TGlobalOrd The converted global ord.
+   */
+  //TGlobalOrd convertToOrd(TGlobalOrd reference, cv::Point point); //TODO: Remove if never use
 
   /*! @brief Given a map, determine if two points can be connected.
    *
@@ -74,7 +85,7 @@ public:
    *           is a color enabled image (not greyscale).
    *  @param prm A network of pixel points, and its connection to other points.
    */
-  void overlayPRM(cv::Mat &m, std::vector<std::pair<cv::Point, std::vector<cv::Point>>> prm);
+  void overlayPRM(cv::Mat &m, std::vector<std::pair<cv::Point, cv::Point>> prm);
 
   /*! @brief Draws a path onto an existing map.
    *

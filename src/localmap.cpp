@@ -22,12 +22,12 @@ LocalMap::LocalMap(double mapSize, double res): resolution_(res)
 }
 
 cv::Point LocalMap::convertToPoint(TGlobalOrd reference, TGlobalOrd ordinate){
-  //TODO: FACTOR IN SIZE OF ROBOT???
   int convertedX;
   int convertedY;
 
   //With respect to the reference, determine which sector the ordinate is within
   if(ordinate.x > reference.x){
+
     convertedX = (pixelMapSize_ / 2) + (std::abs(std::round((ordinate.x - reference.x)/resolution_)));
   } else {
     convertedX = (pixelMapSize_ / 2) - (std::abs(std::round((ordinate.x - reference.x)/resolution_)));
@@ -42,10 +42,6 @@ cv::Point LocalMap::convertToPoint(TGlobalOrd reference, TGlobalOrd ordinate){
   return cv::Point(convertedX, convertedY);
 }
 
-//TGlobalOrd LocalMap::convertToOrd(TGlobalOrd reference, cv::Point point){
-//  //TODO
-//}
-
 bool LocalMap::canConnect(cv::Mat &m, cv::Point start, cv::Point end){
   //Do a bounds check
   if(!inMap(start) || !inMap(end)){
@@ -59,25 +55,21 @@ bool LocalMap::canConnect(cv::Mat &m, cv::Point start, cv::Point end){
     if(!isAccessible(m, line.pos())){
       return false;
     }
-//    if(m.at<uchar>(line.pos()) != 255){
-//      return false;
-//    }
   }
 
   return true;
 }
 
-void LocalMap::overlayPRM(cv::Mat &m, std::vector<std::pair<cv::Point, std::vector<cv::Point>>> prm){
+void LocalMap::overlayPRM(cv::Mat &m, std::vector<std::pair<cv::Point, cv::Point>> prm){
   //TODO: This colud be made smarter by checking if a link between points has already been drawn.
 
-  for(auto const &node: prm){
-    //Draw circle to represent point
-    cv::circle(m, node.first, 2, cv::Scalar(255,0,0),-1);
+  for(auto const &neighbours: prm){
+    //Draw circles to represent points
+    cv::circle(m, neighbours.first, 2, cv::Scalar(255,0,0),-1);
+    cv::circle(m, neighbours.second, 2, cv::Scalar(255,0,0),-1);
 
     //Connect neighbours
-    for(auto const &neighbour: node.second){
-      cv::line(m, node.first, neighbour, cv::Scalar(255,0,0),1);
-    }
+    cv::line(m, neighbours.first, neighbours.second, cv::Scalar(255,0,0), 1);
   }
 }
 
@@ -103,7 +95,6 @@ bool LocalMap::isAccessible(cv::Mat &m, cv::Point p){
     return false;
   }
 
-  //Assumes m is greyscale.
   return (m.at<uchar>(p) == 255);
 }
 
