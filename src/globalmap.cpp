@@ -215,10 +215,11 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd start, TGlobalOr
 
   std::cout << "calculating path..." << std::endl;
 
-//  vPath = graph_.shortestPath(vStart, vGoal);
-//  if(vPath.size() > 0){
-//    return convertPath(vPath);
-//  }
+  vPath = graph_.shortestPath(vStart, vGoal);
+  if(vPath.size() > 0){
+    std::cout << "found path..." << std::endl;
+    return convertPath(vPath);
+  }
 
   return path;
 }
