@@ -48,6 +48,18 @@ cv::Mat partionedMap2(void){
   return image;
 }
 
+cv::Mat partionedMap3(void){
+  //This map has a horizontal black line diagonally
+  double mapSize = 20.0;
+  double res = 0.1;
+  int pixels = (int) mapSize / res;
+
+  cv::Mat image(pixels, pixels, CV_8UC1, cv::Scalar(255, 255, 255));
+  cv::line(image,cv::Point(0,0),cv::Point(200,200),cv::Scalar(0,0,0),1);
+
+  return image;
+}
+
 cv::Mat unknownMap(void){
   //Contains two 'unknown' (grey) areas on the map
   double mapSize = 20.0;
@@ -75,6 +87,20 @@ cv::Mat hallway(void){
 }
 
 /*! PRE-BUILT MAPS END !*/
+
+TEST(ConfigSpace, configSpace1){
+  LocalMap l(20.0, 0.1);
+
+  cv::Mat img = hallway();
+
+  cv::imshow("before", img);
+
+  l.expandConfigSpace(img, 1);
+
+  cv::imshow("after", img);
+
+  cv::waitKey(100000);
+}
 
 /*! TEST: Testing graphical connections between points on an opencv image !*/
 TEST(LocalMap, connectInEmptyMap){

@@ -7,20 +7,10 @@
 */
 #include "globalmap.h"
 
-#include <algorithm>
-#include <limits>
-#include <iostream>
-#include <string>
 #include <math.h>
 #include <random>
-#include <iostream>
 #include <thread>
 #include <chrono>
-
-#include <opencv2/imgproc/imgproc.hpp>
-#include <image_transport/image_transport.h>
-#include <opencv2/highgui/highgui.hpp>
-#include <cv_bridge/cv_bridge.h>
 
 static const unsigned int MaxGraphDensity = 5;  /*!< The max amount of neighbours a vertex in the graph can have */
 static const double MaxDistance = 2.5;          /*!< The max distance between two verticies in the graph */
@@ -47,7 +37,6 @@ std::vector<TGlobalOrd> GlobalMap::convertPath(std::vector<vertex> path){
   std::vector<TGlobalOrd> ordPath;
 
   for(auto const &v: path){
-    //TODO: Slightly risky if its not in the LUT
     ordPath.push_back(vertexLUT_[v]);
   }
 
@@ -59,6 +48,8 @@ std::vector<std::pair<cv::Point, cv::Point>> GlobalMap::constructPRM()
   std::vector<std::pair<cv::Point, cv::Point>> prm;
   std::map<vertex, edges> nodes = graph_.container();
 
+  //For each vertex in our internal graph, create a pair of points
+  //between itself and all its neighbours
   for(auto const &node: nodes){
     cv::Point pCurrent = lmap_.convertToPoint(reference_, vertexLUT_[node.first]);
 
@@ -97,21 +88,22 @@ void GlobalMap::showOverlay(cv::Mat &m, std::vector<TGlobalOrd> path){
 
 //Given an existing node, attempt to connect to other points within the network
 void GlobalMap::connectToExistingNodes(cv::Mat &m, vertex node){
-  cv::Point currentPos = lmap_.convertToPoint(reference_, vertexLUT_[node]);
+  cv::Point pNode= lmap_.convertToPoint(reference_, vertexLUT_[node]);
+
+  //TODO: This could be smarter...
 
   for(auto const &vertex: vertexLUT_){
     if(vertex.first == node){
+      //We don't want to connect it to itself
       continue;
     }
 
-    cv::Point vPoint = lmap_.convertToPoint(reference_, vertex.second);
-    if(lmap_.canConnect(m, currentPos, vPoint)){
+    cv::Point pVertex = lmap_.convertToPoint(reference_, vertex.second);
+    if(lmap_.canConnect(m, pNode, pVertex)){
       graph_.addEdge(node, vertex.first, distance(vertexLUT_[node], vertex.second));
     }
   }
 }
-
-
 
 //m is greyscale
 std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd start, TGlobalOrd goal)

@@ -61,6 +61,8 @@ public:
    */
   bool canConnect(cv::Mat &m, cv::Point start, cv::Point end);
 
+  void expandConfigSpace(cv::Mat &m, double robotDiameter);
+
   /*! @brief Checks if a point is within the known local map.
    *
    *  @param p The point to test for its place within the map.

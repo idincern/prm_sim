@@ -90,6 +90,29 @@ void LocalMap::overlayPath(cv::Mat &m, std::vector<cv::Point> path){
   }
 }
 
+//robotDiameter in m
+void LocalMap::expandConfigSpace(cv::Mat &m, double robotDiameter){
+  int pixelSize = robotDiameter / resolution_;
+  std::vector<cv::Point> pointsToExpand;
+
+  //For each point on the map that isn't free space,
+  //expand its boundary by the size of the robot diameter.
+  for(int i = 0; i < m.rows; i++){
+    for(int j = 0; j < m.cols; j++){
+      if(m.at<uchar>(j,i) != 255){
+        pointsToExpand.push_back({i, j});
+      }
+    }
+  }
+
+  //Simply draw a circle equal to the
+  for(auto const &p: pointsToExpand){
+    unsigned int inten = m.at<uchar>(p);
+    cv::circle(m, p, pixelSize, (inten, inten, inten), -1);
+  }
+
+}
+
 bool LocalMap::isAccessible(cv::Mat &m, cv::Point p){
   if(!inMap(p)){
     return false;

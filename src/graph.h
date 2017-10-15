@@ -61,7 +61,6 @@ public:
    */
   std::vector<vertex> shortestPath(const vertex start, const vertex goal);
 
-
   /*! @brief Returns the container representing the graph.
    *
    *  @return map<vertex, edges> - The container that represents the graph.
