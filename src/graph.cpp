@@ -141,6 +141,10 @@ std::vector<vertex> Graph::shortestPath(const vertex start, const vertex goal){
       }
     }
 
+    if(std::find(queue.begin(), queue.end(), goal) == queue.end()){
+      break;
+    }
+
     queue.erase(std::remove(queue.begin(), queue.end(), v), queue.end());
   }
 
@@ -150,4 +154,21 @@ std::vector<vertex> Graph::shortestPath(const vertex start, const vertex goal){
 std::map<vertex, edges> Graph::container() const
 {
   return container_;
+}
+
+bool Graph::canConnect(const vertex v, const weight w)
+{
+  if(container_.find(v) == container_.end()){
+    return false;
+  }
+
+  if(container_[v].size() >= maxNeighbours_){
+    return false;
+  }
+
+  if(w > maxWeight_){
+    return false;
+  }
+
+  return true;
 }

@@ -67,6 +67,17 @@ public:
    */
   std::map<vertex, edges> container() const;
 
+  /*! @brief Checks if one is able to connect to a given vertex.
+   *
+   *  This is determined by the supplied weighting, and whether
+   *  the vertex has connections to spare.
+   *
+   *  @param v The vertex to check for.
+   *  @param w The potential weighting.
+   *  @return TRUE - If we can connect
+   */
+  bool canConnect(const vertex v, const weight w);
+
 private:
   weight maxWeight_;                   /*!< The max weighting an edge is allowed to have */
   unsigned int maxNeighbours_;         /*!< A vertex has a max amount of neighbours */

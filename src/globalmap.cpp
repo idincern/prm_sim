@@ -14,7 +14,7 @@
 #include <chrono>
 
 static const unsigned int MaxGraphDensity = 5;  /*!< The max amount of neighbours a vertex in the graph can have */
-static const double MaxDistance = 4;            /*!< The max distance between two verticies in the graph (2.5) */
+static const double MaxDistance = 4;          /*!< The max distance between two verticies in the graph (2.5) */
 
 GlobalMap::GlobalMap(double mapSize, double mapRes, double robotDiameter):
   graph_(Graph(MaxGraphDensity, MaxDistance)), lmap_(LocalMap(mapSize, mapRes))
@@ -74,8 +74,6 @@ std::vector<std::pair<cv::Point, cv::Point>> GlobalMap::constructPRM()
     }
   }
 
-  //TODO: add nodes that have no neighbours
-
   return prm;
 }
 
@@ -104,46 +102,31 @@ void GlobalMap::connectNodes(cv::Mat &m){
     checked.push_back(entry.first);
 
     int cnt(0);
-    vertex vClosest = entry.first;
-    //weight min = MaxDistance + 1;
 
-    while(cnt < MaxGraphDensity){
-      weight min = MaxDistance + 1;
-
-      //Find the next closest vertex to current vertex
-      for(auto const &subentry: vertexLUT_){
-        if(std::find(checked.begin(), checked.end(), subentry.first) != checked.end()){
-          continue;
-        }
-
-        weight d = distance(entry.second, subentry.second);
-        if(d < min){
-          min = d;
-          vClosest = subentry.first;
-        }
-      }
-
-      //The closest vertex is still itself...
-      if(vClosest == entry.first){
-        break;
-      }
-
-      //Otherwise, we have the next closest vertex!
-      checked.push_back(vClosest);
-
-      TGlobalOrd ordCurrent = vertexLUT_[entry.first];
-      TGlobalOrd ordClosest = vertexLUT_[vClosest];
-
-      cv::Point pCurrent = lmap_.convertToPoint(reference_, ordCurrent);
-      cv::Point pClosest = lmap_.convertToPoint(reference_, ordClosest);
-
-      if(lmap_.canConnect(m,pCurrent,pClosest)){
-        if(graph_.addEdge(entry.first, vClosest, distance(ordCurrent, ordClosest))){
-          cnt++;
-        }
+    std::vector<vertex> withinRange;
+    for(auto const &subentry: vertexLUT_){
+      if(graph_.canConnect(subentry.first, distance(entry.second, subentry.second))){
+        withinRange.push_back(subentry.first);
       }
     }
 
+    for(auto const &n: withinRange){
+      TGlobalOrd ordCurrent = vertexLUT_[entry.first];
+      TGlobalOrd ordN = vertexLUT_[n];
+
+      cv::Point pCurrent = lmap_.convertToPoint(reference_, ordCurrent);
+      cv::Point pN = lmap_.convertToPoint(reference_, ordN);
+
+      if(lmap_.canConnect(m,pCurrent,pN)){
+        if(graph_.addEdge(entry.first, n, distance(ordCurrent, ordN))){
+          cnt++;
+        }
+      }
+
+      if(cnt > MaxGraphDensity){
+        break;
+      }
+    }
   }
 }
 
@@ -190,32 +173,17 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd start, TGlobalOr
     vGoal = findOrAdd(goal);
   }
 
+  connectNodes(m);
+
   //Check if there is already a path between the two points
   std::vector<vertex> vPath = graph_.shortestPath(vStart, vGoal);
   if(vPath.size() > 0){
     return convertPath(vPath);
   }
 
-  //Check if we can add the start and goal to the prm and find a path
-  connectToExistingNodes(m, vStart);
-  connectToExistingNodes(m, vGoal);
-  vPath = graph_.shortestPath(vStart, vGoal);
-  if(vPath.size() > 0){
-    return convertPath(vPath); //Perhaphs unecessary as it will happen later?
-  }
+  unsigned int nodeCnt(0);
 
-  bool foundPath = false;
-  unsigned int safetyCnt = 0;
-
-  while(!foundPath){
-    safetyCnt++;
-
-    if(safetyCnt == 1000){
-      //TODO: Determine if this is necessary?
-      //Max node geneartion instead
-      break;
-    }
-
+  while(nodeCnt < 50){
     TGlobalOrd randomOrd;
     //Generate random ords within the map space...
     std::default_random_engine generator(std::chrono::duration_cast<std::chrono::nanoseconds>
@@ -239,15 +207,18 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd start, TGlobalOr
 
     //See if vertex exists in graph already otherwise, attempt to connect to other verticies
     vertex vRand = findOrAdd(randomOrd);
-    connectToExistingNodes(m, vRand);
-
-    //Check for path
-    vPath = graph_.shortestPath(vStart, vGoal);
-    if(vPath.size() > 0){
-      path = convertPath(vPath);
-      foundPath = true;
-    }
+    nodeCnt++;
   }
+
+  //Check for path
+  connectNodes(m);
+
+  std::cout << "calculating path..." << std::endl;
+
+//  vPath = graph_.shortestPath(vStart, vGoal);
+//  if(vPath.size() > 0){
+//    return convertPath(vPath);
+//  }
 
   return path;
 }
