@@ -19,7 +19,6 @@
 class LocalMap
 {
 public:
-  //TODO: Inputs robot size for effective cfg space?
   /*! @brief Constructor for LocalMap.
    *
    *  @param mapSize The size of the overall map in meters (square maps only).
@@ -38,15 +37,6 @@ public:
    */
   cv::Point convertToPoint(TGlobalOrd reference, TGlobalOrd ordinate);
 
-  /*! @brief Converts a pixel coordinate to a global coordinate.
-   *
-   *  @param reference The reference position to base our conversion off.
-   *                   This is usually the robot's position.
-   *  @param point The pixel coordinate to convert.
-   *  @return TGlobalOrd The converted global ord.
-   */
-  //TGlobalOrd convertToOrd(TGlobalOrd reference, cv::Point point); //TODO: Remove if never use
-
   /*! @brief Given a map, determine if two points can be connected.
    *
    *  This method determines if there are any obstacles between start and
@@ -61,6 +51,15 @@ public:
    */
   bool canConnect(cv::Mat &m, cv::Point start, cv::Point end);
 
+  /*! @brief Expands the configuration space of a map.
+   *
+   *  So that we are able to treat the robot as a point in space,
+   *  we expand the boundaries of non-free space by the diameter of
+   *  the robot.
+   *
+   *  @param m The configuration space (map) to expand.
+   *  @param robotDiameter The diameter of the robot in meters.
+   */
   void expandConfigSpace(cv::Mat &m, double robotDiameter);
 
   /*! @brief Checks if a point is within the known local map.

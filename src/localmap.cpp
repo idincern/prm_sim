@@ -9,7 +9,6 @@
 */
 #include "localmap.h"
 
-#include <iostream> //TODO: REMOVE
 #include <math.h>
 #include <image_transport/image_transport.h>
 #include <opencv2/highgui/highgui.hpp>
@@ -61,8 +60,6 @@ bool LocalMap::canConnect(cv::Mat &m, cv::Point start, cv::Point end){
 }
 
 void LocalMap::overlayPRM(cv::Mat &m, std::vector<std::pair<cv::Point, cv::Point>> prm){
-  //TODO: This colud be made smarter by checking if a link between points has already been drawn.
-
   for(auto const &neighbours: prm){
     //Draw circles to represent points
     cv::circle(m, neighbours.first, 2, cv::Scalar(255,0,0),-1);
@@ -105,7 +102,7 @@ void LocalMap::expandConfigSpace(cv::Mat &m, double robotDiameter){
     }
   }
 
-  //Simply draw a circle equal to the
+  //Simply draw a circle equal to the size of the robot at that point
   for(auto const &p: pointsToExpand){
     unsigned int inten = m.at<uchar>(p);
     cv::circle(m, p, pixelSize, (inten, inten, inten), -1);

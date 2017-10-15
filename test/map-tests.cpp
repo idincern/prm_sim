@@ -88,18 +88,16 @@ cv::Mat hallway(void){
 
 /*! PRE-BUILT MAPS END !*/
 
-TEST(ConfigSpace, configSpace1){
+TEST(ConfigSpace, expanded){
   LocalMap l(20.0, 0.1);
 
   cv::Mat img = hallway();
 
-  cv::imshow("before", img);
+  EXPECT_EQ(255, img.at<uchar>(21, 21));
 
   l.expandConfigSpace(img, 1);
 
-  cv::imshow("after", img);
-
-  cv::waitKey(100000);
+  EXPECT_EQ(125, img.at<uchar>(21, 21));
 }
 
 /*! TEST: Testing graphical connections between points on an opencv image !*/
