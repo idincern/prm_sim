@@ -7,13 +7,14 @@
 */
 #include "globalmap.h"
 
+#include <iostream>
 #include <math.h>
 #include <random>
 #include <thread>
 #include <chrono>
 
 static const unsigned int MaxGraphDensity = 5;  /*!< The max amount of neighbours a vertex in the graph can have */
-static const double MaxDistance = 2.5;          /*!< The max distance between two verticies in the graph */
+static const double MaxDistance = 4;            /*!< The max distance between two verticies in the graph (2.5) */
 
 GlobalMap::GlobalMap(double mapSize, double mapRes, double robotDiameter):
   graph_(Graph(MaxGraphDensity, MaxDistance)), lmap_(LocalMap(mapSize, mapRes))
@@ -54,6 +55,11 @@ std::vector<std::pair<cv::Point, cv::Point>> GlobalMap::constructPRM()
   for(auto const &node: nodes){
     cv::Point pCurrent = lmap_.convertToPoint(reference_, vertexLUT_[node.first]);
 
+    //It has no neighbours, we must still add it to the prm though
+    if(node.second.size() == 0){
+      prm.push_back(std::make_pair(pCurrent, pCurrent));
+    }
+
     for(auto const &neighbour: node.second){
       cv::Point pNeighbour = lmap_.convertToPoint(reference_, vertexLUT_[neighbour.first]);
 
@@ -67,6 +73,8 @@ std::vector<std::pair<cv::Point, cv::Point>> GlobalMap::constructPRM()
       }
     }
   }
+
+  //TODO: add nodes that have no neighbours
 
   return prm;
 }
@@ -87,21 +95,72 @@ void GlobalMap::showOverlay(cv::Mat &m, std::vector<TGlobalOrd> path){
   lmap_.overlayPath(m, pPath);
 }
 
-//Given an existing node, attempt to connect to other points within the network
-void GlobalMap::connectToExistingNodes(cv::Mat &m, vertex node){
-  cv::Point pNode= lmap_.convertToPoint(reference_, vertexLUT_[node]);
 
-  //TODO: This could be smarter...
+void GlobalMap::connectNodes(cv::Mat &m){
+  //entry.first = vertex
+  //entry.second = ord
+  for(auto const &entry: vertexLUT_){
+    std::vector<vertex> checked;
+    checked.push_back(entry.first);
+
+    int cnt(0);
+    vertex vClosest = entry.first;
+    //weight min = MaxDistance + 1;
+
+    while(cnt < MaxGraphDensity){
+      weight min = MaxDistance + 1;
+
+      //Find the next closest vertex to current vertex
+      for(auto const &subentry: vertexLUT_){
+        if(std::find(checked.begin(), checked.end(), subentry.first) != checked.end()){
+          continue;
+        }
+
+        weight d = distance(entry.second, subentry.second);
+        if(d < min){
+          min = d;
+          vClosest = subentry.first;
+        }
+      }
+
+      //The closest vertex is still itself...
+      if(vClosest == entry.first){
+        break;
+      }
+
+      //Otherwise, we have the next closest vertex!
+      checked.push_back(vClosest);
+
+      TGlobalOrd ordCurrent = vertexLUT_[entry.first];
+      TGlobalOrd ordClosest = vertexLUT_[vClosest];
+
+      cv::Point pCurrent = lmap_.convertToPoint(reference_, ordCurrent);
+      cv::Point pClosest = lmap_.convertToPoint(reference_, ordClosest);
+
+      if(lmap_.canConnect(m,pCurrent,pClosest)){
+        if(graph_.addEdge(entry.first, vClosest, distance(ordCurrent, ordClosest))){
+          cnt++;
+        }
+      }
+    }
+
+  }
+}
+
+//Given an existing node, attempt to connect to other points within the network
+//TODO: Pass in ord instead
+void GlobalMap::connectToExistingNodes(cv::Mat &m, vertex vToAdd){
+  TGlobalOrd ordToAdd = vertexLUT_[vToAdd];
+  cv::Point pToAdd = lmap_.convertToPoint(reference_, vertexLUT_[vToAdd]);
 
   for(auto const &vertex: vertexLUT_){
-    if(vertex.first == node){
-      //We don't want to connect it to itself
+    if(vertex.first == vToAdd){
       continue;
     }
 
     cv::Point pVertex = lmap_.convertToPoint(reference_, vertex.second);
-    if(lmap_.canConnect(m, pNode, pVertex)){
-      graph_.addEdge(node, vertex.first, distance(vertexLUT_[node], vertex.second));
+    if(lmap_.canConnect(m, pToAdd, pVertex)){
+      graph_.addEdge(vToAdd, vertex.first, distance(ordToAdd, vertex.second));
     }
   }
 }
@@ -123,7 +182,7 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd start, TGlobalOr
 
     //First check that both points are accessible within the current map...
     if(!lmap_.isAccessible(m, pStart) || !lmap_.isAccessible(m, pGoal)){
-      return path;
+      return path; //if not, return empty path
     }
 
     //Find or add the verticies to/in our graph
@@ -137,12 +196,12 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd start, TGlobalOr
     return convertPath(vPath);
   }
 
-  //Check if we can add an edge between start and goal before building process
+  //Check if we can add the start and goal to the prm and find a path
   connectToExistingNodes(m, vStart);
   connectToExistingNodes(m, vGoal);
   vPath = graph_.shortestPath(vStart, vGoal);
   if(vPath.size() > 0){
-    return convertPath(vPath);
+    return convertPath(vPath); //Perhaphs unecessary as it will happen later?
   }
 
   bool foundPath = false;
@@ -153,6 +212,7 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd start, TGlobalOr
 
     if(safetyCnt == 1000){
       //TODO: Determine if this is necessary?
+      //Max node geneartion instead
       break;
     }
 

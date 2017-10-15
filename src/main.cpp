@@ -27,7 +27,7 @@ int main() {
   cv::Mat colourMap;
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
-  GlobalMap g(20.0, 0.1);
+  GlobalMap g(20.0, 0.1, 0.2);
   TGlobalOrd robot{10, 10}, start{4, 2};
   g.setReference(robot);
 

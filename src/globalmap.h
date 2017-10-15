@@ -68,6 +68,8 @@ private:
 
   //Attempts to find an ordinate as existing in network, if not make a new entry and return
   vertex findOrAdd(TGlobalOrd ordinate);
+
+  void connectNodes(cv::Mat &m);
 };
 
 #endif // GLOBALMAP_H
