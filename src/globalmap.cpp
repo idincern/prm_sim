@@ -98,9 +98,6 @@ void GlobalMap::connectNodes(cv::Mat &m){
   //entry.first = vertex
   //entry.second = ord
   for(auto const &entry: vertexLUT_){
-    std::vector<vertex> checked;
-    checked.push_back(entry.first);
-
     int cnt(0);
 
     std::vector<vertex> withinRange;
@@ -167,18 +164,6 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd start, TGlobalOr
     if(!lmap_.isAccessible(m, pStart) || !lmap_.isAccessible(m, pGoal)){
       return path; //if not, return empty path
     }
-
-    //Find or add the verticies to/in our graph
-    vStart = findOrAdd(start);
-    vGoal = findOrAdd(goal);
-  }
-
-  connectNodes(m);
-
-  //Check if there is already a path between the two points
-  std::vector<vertex> vPath = graph_.shortestPath(vStart, vGoal);
-  if(vPath.size() > 0){
-    return convertPath(vPath);
   }
 
   unsigned int nodeCnt(0);
@@ -211,10 +196,15 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd start, TGlobalOr
     connectNodes(m);
   }
 
+  //Find or add the verticies to/in our graph
+  //TODO: HAve no distance constraint when adding these guys
+  vStart = findOrAdd(start);
+  vGoal = findOrAdd(goal);
+
   //Check for path
   connectNodes(m);
 
-  vPath = graph_.shortestPath(vStart, vGoal);
+  std::vector<vertex> vPath = graph_.shortestPath(vStart, vGoal);
   if(vPath.size() > 0){
     return convertPath(vPath);
   }
