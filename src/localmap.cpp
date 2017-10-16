@@ -29,7 +29,6 @@ cv::Point LocalMap::convertToPoint(TGlobalOrd reference, TGlobalOrd ordinate){
 
   //With respect to the reference, determine which sector the ordinate is within
   if(ordinate.x > reference.x){
-
     convertedX = (pixelMapSize_ / 2) + (std::abs(std::round((ordinate.x - reference.x)/resolution_)));
   } else {
     convertedX = (pixelMapSize_ / 2) - (std::abs(std::round((ordinate.x - reference.x)/resolution_)));
@@ -44,53 +43,7 @@ cv::Point LocalMap::convertToPoint(TGlobalOrd reference, TGlobalOrd ordinate){
   return cv::Point(convertedX, convertedY);
 }
 
-bool LocalMap::canConnect(cv::Mat &m, cv::Point start, cv::Point end){
-  //Do a bounds check
-  if(!inMap(start) || !inMap(end)){
-    return false;
-  }
 
-  //Iterate through each pixel between both points, checking that
-  //each pixel is white = free space
-  cv::LineIterator line(m, start, end);
-  for(int i = 0; i < line.count; i++, line++){
-    if(!isAccessible(m, line.pos())){
-      return false;
-    }
-  }
-
-  return true;
-}
-
-void LocalMap::overlayPRM(cv::Mat &m, std::vector<std::pair<cv::Point, cv::Point>> prm){
-  for(auto const &neighbours: prm){
-    //Draw circles to represent points
-    cv::circle(m, neighbours.first, 1, PrmColour,-1);
-    cv::circle(m, neighbours.second, 1, PrmColour,-1);
-
-    //Connect neighbours
-    cv::line(m, neighbours.first, neighbours.second, PrmColour, 1);
-  }
-}
-
-void LocalMap::overlayPath(cv::Mat &m, std::vector<cv::Point> path){
-  if(path.size() < 1){
-    return; //We don't want an out of bounds error from below
-  }
-
-  cv::Point previousNode = path.at(0);
-
-  for(auto const &node: path){
-    //Draw circle to represent point
-    cv::circle(m, node, 1,PathColour,-1);
-
-    //Connect to previous point
-    cv::line(m, node, previousNode,PathColour,1);
-    previousNode = node;
-  }
-}
-
-//robotDiameter in m
 void LocalMap::expandConfigSpace(cv::Mat &space, double robotDiameter){
   int pixDiameter = robotDiameter / resolution_;
   std::vector<cv::Point> pointsToExpand;
@@ -115,12 +68,58 @@ void LocalMap::expandConfigSpace(cv::Mat &space, double robotDiameter){
   }
 }
 
-bool LocalMap::isAccessible(cv::Mat &m, cv::Point p){
+void LocalMap::overlayPRM(cv::Mat &space, std::vector<std::pair<cv::Point, cv::Point>> prm){
+  for(auto const &neighbours: prm){
+    //Draw circles to represent points
+    cv::circle(space, neighbours.first, 1, PrmColour,-1);
+    cv::circle(space, neighbours.second, 1, PrmColour,-1);
+
+    //Connect neighbours
+    cv::line(space, neighbours.first, neighbours.second, PrmColour, 1);
+  }
+}
+
+void LocalMap::overlayPath(cv::Mat &space, std::vector<cv::Point> path){
+  if(path.size() < 1){
+    return; //We don't want an out of bounds error from below
+  }
+
+  cv::Point previousNode = path.at(0);
+
+  for(auto const &node: path){
+    //Draw circle to represent point
+    cv::circle(space, node, 1,PathColour,-1);
+
+    //Connect to previous point
+    cv::line(space, node, previousNode,PathColour,1);
+    previousNode = node;
+  }
+}
+
+bool LocalMap::canConnect(cv::Mat &cspace, cv::Point start, cv::Point end){
+  //Do a bounds check
+  if(!inMap(start) || !inMap(end)){
+    return false;
+  }
+
+  //Iterate through each pixel between both points, checking that
+  //each pixel is white = free space
+  cv::LineIterator line(cspace, start, end);
+  for(int i = 0; i < line.count; i++, line++){
+    if(!isAccessible(cspace, line.pos())){
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool LocalMap::isAccessible(cv::Mat &cspace, cv::Point p){
   if(!inMap(p)){
     return false;
   }
 
-  return (m.at<uchar>(p) == 255);
+  return (cspace.at<uchar>(p) == 255);
 }
 
 bool LocalMap::inMap(cv::Point p){

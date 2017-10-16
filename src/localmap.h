@@ -43,13 +43,13 @@ public:
    *  end. The colour white in a map denotes known 'free space'. Anything
    *  else is unknown or blocked.
    *
-   *  @param m The map to look within. Note, this must be a greyscale image!
+   *  @param cspace The configuration space to look within. Note, this must be a greyscale image!
    *  @param start The starting position.
    *  @param end The ending position.
    *  @return bool - TRUE if there is nothing blocking the path between
    *                 start and end.
    */
-  bool canConnect(cv::Mat &m, cv::Point start, cv::Point end);
+  bool canConnect(cv::Mat &cspace, cv::Point start, cv::Point end);
 
   /*! @brief Expands the configuration space of a map.
    *
@@ -62,43 +62,43 @@ public:
    */
   void expandConfigSpace(cv::Mat &space, double robotDiameter);
 
-  /*! @brief Checks if a point is within the known local map.
+  /*! @brief Checks if a point is within the known boundaries.
    *
-   *  @param p The point to test for its place within the map.
+   *  @param p The point to test for its place within the space boundaries.
    *  @return bool - TRUE if it is within the map.
    */
   bool inMap(cv::Point p);
 
   /*! @brief Checks if a point is within free space.
    *
-   *  @param m A greyscale map image.
+   *  @param cspace A greyscale image of the configuration space.
    *  @param p The point to test for within the map.
    *  @return bool - TRUE if the point is accessible.
    */
-  bool isAccessible(cv::Mat &m, cv::Point p);
+  bool isAccessible(cv::Mat &cspace, cv::Point p);
 
-  /*! @brief Draws a Probablistic Road Map onto an existing map.
+  /*! @brief Draws a Probablistic Road Map onto an existing space.
    *
    *  Will draw a blue circle to represent a node, and blue lines to represent
    *  its connections to other nodes within the PRM.
    *
-   *  @param m The map to overlay the PRM on top of. It is assumed that this
+   *  @param m The space to overlay the PRM on top of. It is assumed that this
    *           is a color enabled image (not greyscale).
    *  @param prm A network of pixel points, and its connection to other points.
    */
-  void overlayPRM(cv::Mat &m, std::vector<std::pair<cv::Point, cv::Point>> prm);
+  void overlayPRM(cv::Mat &space, std::vector<std::pair<cv::Point, cv::Point>> prm);
 
-  /*! @brief Draws a path onto an existing map.
+  /*! @brief Draws a path onto an existing space.
    *
    *  Will draw a red circle to represent a node, and blue lines to represent
    *  its connections to the next node in the path. Primarily used for showing
    *  a path between a start and end goal.
    *
-   *  @param m The map to overlay the PRM on top of. It is assumed that this
-   *           is a color enabled image (not greyscale).
+   *  @param space The space to overlay the PRM on top of. It is assumed that this
+   *               is a color enabled image (not greyscale).
    *  @param path An ordered vector representing a path between points.
    */
-  void overlayPath(cv::Mat &m, std::vector<cv::Point> path);
+  void overlayPath(cv::Mat &space, std::vector<cv::Point> path);
 
   /*! @brief Setter for updating the map size (square maps only).
    *
