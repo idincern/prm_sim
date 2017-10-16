@@ -72,24 +72,23 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &space, TGlobalOrd start, TGlob
     //See if vertex exists in graph already otherwise, attempt to connect to other verticies
     vertex vRand = findOrAdd(randomOrd);
     nodeCnt++;
-
-    connectNodes(space, true);
   }
 
-  //Find or add the verticies to/in our graph
-  //TODO: HAve no distance constraint when adding these guys
+  //Connect all the newely generated nodes (verticies)
+  connectNodes(space, false);
+
+  //Find or add the start/goal verticies to/in our graph
   vStart = findOrAdd(start);
   vGoal = findOrAdd(goal);
 
-  //Check for path
+  //Connect to the PRM
   connectNode(space, vStart, false);
   connectNode(space, vGoal, false);
-  //connectNodes(m, true);
 
+  //Find a path and optimise the graph.
   std::vector<vertex> vPath = graph_.shortestPath(vStart, vGoal);
   if(vPath.size() > 0){
     return optimisePath(space, toOrdPath(vPath));
-    //return convertPath(vPath);
   }
 
   return path;
@@ -201,37 +200,42 @@ double distance(TGlobalOrd p1, TGlobalOrd p2){
 }
 
 void GlobalMap::connectNode(cv::Mat &cspace, vertex node, bool imposeMaxDist){
-  int cnt(0);
   TGlobalOrd nodeOrd = network_[node];
 
   //Find the neighbours that are closest to the current node
-  std::vector<vertex> candidates;
+  std::vector<TGlobalOrd> candidates;
   for(auto const &candidate: network_){
     if(graph_.canConnect(candidate.first)){
       //If we care about the distance, then we need to check before adding.
       if(imposeMaxDist){
         if(distance(nodeOrd, candidate.second) < MaxDistance){
-          candidates.push_back(candidate.first);
+          candidates.push_back(candidate.second);
         }
       } else {
-        candidates.push_back(candidate.first);
+        candidates.push_back(candidate.second);
       }
     }
   }
 
-  //TODO: Sort candidates by distance.
+  //Sort candidates by distance.
+  std::sort(candidates.begin(), candidates.end(),[nodeOrd](const TGlobalOrd &lhs, const TGlobalOrd &rhs){
+    return distance(lhs, nodeOrd) < distance(rhs, nodeOrd);});
 
   //For each of our neighbouring candidates, determine
   //if we can connect to them in the cspace
+  int cnt(0);
   for(auto const &neighbour: candidates){
-    TGlobalOrd ordN = network_[neighbour];
+    vertex vNeighbour;
+    if(!lookup(neighbour, vNeighbour)){
+      //something went wrong adding this neighbour, continue
+      continue;
+    }
 
     cv::Point pCurrent = lmap_.convertToPoint(reference_, nodeOrd);
-    cv::Point pN = lmap_.convertToPoint(reference_, ordN);
-
+    cv::Point pN = lmap_.convertToPoint(reference_, neighbour);
     if(lmap_.canConnect(cspace,pCurrent,pN)){
-      if(graph_.addEdge(node, neighbour, distance(nodeOrd, ordN))){
-      cnt++;
+      if(graph_.addEdge(node, vNeighbour, distance(nodeOrd, neighbour))){
+        cnt++;
       }
     }
 

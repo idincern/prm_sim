@@ -88,7 +88,7 @@ void LocalMap::overlayPath(cv::Mat &space, std::vector<cv::Point> path){
 
   for(auto const &node: path){
     //Draw circle to represent point
-    cv::circle(space, node, 1,PathColour,-1);
+    cv::circle(space, node, 2,PathColour,-1);
 
     //Connect to previous point
     cv::line(space, node, previousNode,PathColour,1);

@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-#define SHOW_PRM false
+#define SHOW_PRM true
 
 /* Various opencv images for testing */
 
@@ -319,6 +319,11 @@ TEST(PrmGen, SimplePath){
 
   std::vector<TGlobalOrd> path = g.build(map, robot, goal);
 
+  if(path.size() == 0){
+    std::cout << "Attempting path build again..." << std::endl;
+    path = g.build(map, start, goal);
+  }
+
   if(SHOW_PRM){
     g.showOverlay(colourMap, path);
     cv::imshow("test", colourMap);
@@ -341,6 +346,11 @@ TEST(PrmGen, ComplicatedPath){
 
   std::vector<TGlobalOrd> path = g.build(map, start, goal);
 
+  if(path.size() == 0){
+    std::cout << "Attempting path build again..." << std::endl;
+    path = g.build(map, start, goal);
+  }
+
   if(SHOW_PRM){
     g.showOverlay(colourMap, path);
     cv::imshow("test", colourMap);
@@ -361,6 +371,11 @@ TEST(PrmGen, Hallway){
 
   std::vector<TGlobalOrd> path = g.build(map, start, goal);
 
+  if(path.size() == 0){
+    std::cout << "Attempting path build again..." << std::endl;
+    path = g.build(map, start, goal);
+  }
+
   if(SHOW_PRM){
     g.showOverlay(colourMap, path);
     cv::imshow("test", colourMap);
@@ -380,6 +395,11 @@ TEST(PrmGen, Pole){
   g.setReference(robot);
 
   std::vector<TGlobalOrd> path = g.build(map, start, goal);
+
+  if(path.size() == 0){
+    std::cout << "Attempting path build again..." << std::endl;
+    path = g.build(map, start, goal);
+  }
 
   if(SHOW_PRM){
     g.showOverlay(colourMap, path);
