@@ -59,13 +59,13 @@ private:
   //Consruct a PRM network for overlay later
   std::vector<std::pair<cv::Point, cv::Point>> constructPRM();
 
-  //connect node to all existing verticies
-  void connectToExistingNodes(cv::Mat &m, vertex node);
-
   //Attempts to find an ordinate as existing in network, if not make a new entry and return
   vertex findOrAdd(TGlobalOrd ordinate);
 
-  void connectNodes(cv::Mat &m);
+
+  void connectNode(cv::Mat &m, vertex node, bool imposeMaxDist);
+
+  void connectNodes(cv::Mat &m, bool imposeMaxDist);
 };
 
 #endif // GLOBALMAP_H

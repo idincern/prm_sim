@@ -29,7 +29,7 @@ public:
    *
    *  @param maxNeighbours The max amount of neighbours a vertex can have.
    */
-  Graph(unsigned int maxNeighbours, weight maxWeight);
+  Graph(unsigned int maxNeighbours);
 
   /*! @brief Adds a vertex to the graph.
    *
@@ -76,10 +76,9 @@ public:
    *  @param w The potential weighting.
    *  @return TRUE - If we can connect
    */
-  bool canConnect(const vertex v, const weight w);
+  bool canConnect(const vertex v);
 
 private:
-  weight maxWeight_;                   /*!< The max weighting an edge is allowed to have */
   unsigned int maxNeighbours_;         /*!< A vertex has a max amount of neighbours */
   std::map<vertex, edges> container_;  /*!< A container of all verticies and their neighbours (edges) */
 

@@ -15,8 +15,7 @@
 #include <limits>
 #include <string>
 
-Graph::Graph(unsigned int maxNeighbours, weight maxWeight):
-  maxNeighbours_(maxNeighbours), maxWeight_(maxWeight)
+Graph::Graph(unsigned int maxNeighbours): maxNeighbours_(maxNeighbours)
 {
 }
 
@@ -41,10 +40,6 @@ bool Graph::addEdge(const vertex v, const vertex u, const weight w)
   //Check the verticies are not at their neighbour limits
   if(container_.find(v)->second.size() >= maxNeighbours_ ||
      container_.find(u)->second.size() >= maxNeighbours_){
-    return false;
-  }
-
-  if(w > maxWeight_){
     return false;
   }
 
@@ -142,17 +137,13 @@ std::map<vertex, edges> Graph::container() const
   return container_;
 }
 
-bool Graph::canConnect(const vertex v, const weight w)
+bool Graph::canConnect(const vertex v)
 {
   if(container_.find(v) == container_.end()){
     return false;
   }
 
-  if(container_[v].size() >= maxNeighbours_){
-    return false;
-  }
-
-  if(w > maxWeight_){
+  if(container_.find(v)->second.size() >= maxNeighbours_){
     return false;
   }
 

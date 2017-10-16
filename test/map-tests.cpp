@@ -302,6 +302,12 @@ TEST(PrmGen, SimplePath){
 
   std::vector<TGlobalOrd> path = g.build(map, robot, goal);
 
+  if(path.size() > 0){
+    g.showOverlay(colourMap, path);
+    cv::imshow("test", colourMap);
+    cv::waitKey(10000);
+  }
+
   ASSERT_TRUE(path.size() > 0);
 }
 
@@ -318,10 +324,11 @@ TEST(PrmGen, ComplicatedPath){
 
   std::vector<TGlobalOrd> path = g.build(map, start, goal);
 
-  //VISUAL DISPLAY...
-  //g.showOverlay(colourMap, path);
-  //cv::imshow("test", colourMap);
-  //cv::waitKey(10000);
+  if(path.size() > 0){
+    g.showOverlay(colourMap, path);
+    cv::imshow("test", colourMap);
+    cv::waitKey(10000);
+  }
 
   ASSERT_TRUE(path.size() > 0);
 }
@@ -336,6 +343,12 @@ TEST(PrmGen, Hallway){
   g.setReference(robot);
 
   std::vector<TGlobalOrd> path = g.build(map, start, goal);
+
+  if(path.size() > 0){
+    g.showOverlay(colourMap, path);
+    cv::imshow("test", colourMap);
+    cv::waitKey(10000);
+  }
 
   ASSERT_TRUE(path.size() > 0);
 }
@@ -358,7 +371,7 @@ TEST(PrmGen, NoPath){
 //These tests are based on the graph examples found
 //on the website: https://brilliant.org/wiki/dijkstras-short-path-finder/
 TEST(Graphs, FoundPath1){
-  Graph g(7, 7);
+  Graph g(7);
 
   g.addVertex(0);
   g.addVertex(1);
@@ -398,7 +411,7 @@ TEST(Graphs, FoundPath1){
 }
 
 TEST(Graphs, FoundPath2){
-  Graph g(7, 7);
+  Graph g(7);
 
   g.addVertex(0);
   g.addVertex(1);
@@ -436,7 +449,7 @@ TEST(Graphs, FoundPath2){
 }
 
 TEST(Graphs, UnorderedVerticies){
-  Graph g(7, 7);
+  Graph g(7);
 
   g.addVertex(10);
   g.addVertex(11);
@@ -474,7 +487,7 @@ TEST(Graphs, UnorderedVerticies){
 }
 
 TEST(Graphs, NoPath){
-  Graph g(7, 7);
+  Graph g(7);
 
   g.addVertex(0);
   g.addVertex(1);
@@ -505,7 +518,7 @@ TEST(Graphs, NoPath){
 }
 
 TEST(Graphs, MaxNeighbours){
-  Graph g(3, 7);
+  Graph g(3);
 
   g.addVertex(0);
   g.addVertex(1);
@@ -518,23 +531,6 @@ TEST(Graphs, MaxNeighbours){
   ASSERT_TRUE(g.addEdge(0, 2, 1.0));
   ASSERT_TRUE(g.addEdge(0, 3, 1.0));
   ASSERT_FALSE(g.addEdge(0, 4, 1.0));
-}
-
-TEST(Graphs, MaxWeight){
-  Graph g(7, 4);
-
-  g.addVertex(0);
-  g.addVertex(1);
-  g.addVertex(2);
-  g.addVertex(3);
-  g.addVertex(4);
-  g.addVertex(5);
-
-  ASSERT_TRUE(g.addEdge(0, 1, 1.0));
-  ASSERT_TRUE(g.addEdge(0, 2, 2.0));
-  ASSERT_TRUE(g.addEdge(0, 3, 3.0));
-  ASSERT_TRUE(g.addEdge(0, 4, 4.0));
-  ASSERT_FALSE(g.addEdge(0, 5, 5.0));
 }
 
 int main (int argc, char **argv){

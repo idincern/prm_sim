@@ -14,10 +14,10 @@
 #include <chrono>
 
 static const unsigned int MaxGraphDensity = 5;  /*!< The max amount of neighbours a vertex in the graph can have */
-static const double MaxDistance = 3;          /*!< The max distance between two verticies in the graph (2.5) */
+static const double MaxDistance = 2.5;          /*!< The max distance between two verticies in the graph (2.5) */
 
 GlobalMap::GlobalMap(double mapSize, double mapRes, double robotDiameter):
-  graph_(Graph(MaxGraphDensity, MaxDistance)), lmap_(LocalMap(mapSize, mapRes))
+  graph_(Graph(MaxGraphDensity)), lmap_(LocalMap(mapSize, mapRes))
 {
   mapSize_ = mapSize;
   nextVertexId_ = 0;
@@ -93,29 +93,31 @@ void GlobalMap::showOverlay(cv::Mat &m, std::vector<TGlobalOrd> path){
   lmap_.overlayPath(m, pPath);
 }
 
-
-void GlobalMap::connectNodes(cv::Mat &m){
-  //entry.first = vertex
-  //entry.second = ord
-  for(auto const &entry: vertexLUT_){
+void GlobalMap::connectNode(cv::Mat &m, vertex node, bool imposeMaxDist){
     int cnt(0);
+    TGlobalOrd nodeOrd = vertexLUT_[node];
 
     std::vector<vertex> withinRange;
-    for(auto const &subentry: vertexLUT_){
-      if(graph_.canConnect(subentry.first, distance(entry.second, subentry.second))){
-        withinRange.push_back(subentry.first);
+    for(auto const &entry: vertexLUT_){
+      if(graph_.canConnect(entry.first)){
+        if(imposeMaxDist){
+          if(distance(nodeOrd, entry.second) < MaxDistance){
+            withinRange.push_back(entry.first);
+          }
+        } else {
+          withinRange.push_back(entry.first);
+        }
       }
     }
 
     for(auto const &n: withinRange){
-      TGlobalOrd ordCurrent = vertexLUT_[entry.first];
       TGlobalOrd ordN = vertexLUT_[n];
 
-      cv::Point pCurrent = lmap_.convertToPoint(reference_, ordCurrent);
+      cv::Point pCurrent = lmap_.convertToPoint(reference_, nodeOrd);
       cv::Point pN = lmap_.convertToPoint(reference_, ordN);
 
       if(lmap_.canConnect(m,pCurrent,pN)){
-        if(graph_.addEdge(entry.first, n, distance(ordCurrent, ordN))){
+        if(graph_.addEdge(node, n, distance(nodeOrd, ordN))){
           cnt++;
         }
       }
@@ -124,24 +126,11 @@ void GlobalMap::connectNodes(cv::Mat &m){
         break;
       }
     }
-  }
 }
 
-//Given an existing node, attempt to connect to other points within the network
-//TODO: Pass in ord instead
-void GlobalMap::connectToExistingNodes(cv::Mat &m, vertex vToAdd){
-  TGlobalOrd ordToAdd = vertexLUT_[vToAdd];
-  cv::Point pToAdd = lmap_.convertToPoint(reference_, vertexLUT_[vToAdd]);
-
-  for(auto const &vertex: vertexLUT_){
-    if(vertex.first == vToAdd){
-      continue;
-    }
-
-    cv::Point pVertex = lmap_.convertToPoint(reference_, vertex.second);
-    if(lmap_.canConnect(m, pToAdd, pVertex)){
-      graph_.addEdge(vToAdd, vertex.first, distance(ordToAdd, vertex.second));
-    }
+void GlobalMap::connectNodes(cv::Mat &m, bool imposeMaxDist){
+  for(auto const &entry: vertexLUT_){
+    connectNode(m, entry.first, imposeMaxDist);
   }
 }
 
@@ -193,7 +182,7 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd start, TGlobalOr
     vertex vRand = findOrAdd(randomOrd);
     nodeCnt++;
 
-    connectNodes(m);
+    connectNodes(m, true);
   }
 
   //Find or add the verticies to/in our graph
@@ -202,7 +191,9 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd start, TGlobalOr
   vGoal = findOrAdd(goal);
 
   //Check for path
-  connectNodes(m);
+  connectNode(m, vStart, false);
+  connectNode(m, vGoal, false);
+  //connectNodes(m, true);
 
   std::vector<vertex> vPath = graph_.shortestPath(vStart, vGoal);
   if(vPath.size() > 0){
