@@ -16,7 +16,6 @@ struct TGlobalOrd
   bool operator== (const TGlobalOrd &o1){
     return (this->x == o1.x && this->y == o1.y);
   }
-
 };
 
 #endif // TYPES

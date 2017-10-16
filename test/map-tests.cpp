@@ -12,7 +12,10 @@
 #include <utility>
 #include <vector>
 
-/*! PRE-BUILT MAPS !*/
+#define SHOW_PRM false
+
+/* Various opencv images for testing */
+
 cv::Mat blankMap(void){
   //This map is completely white
   double mapSize = 20.0;
@@ -86,9 +89,21 @@ cv::Mat hallway(void){
   return image;
 }
 
-/*! PRE-BUILT MAPS END !*/
+cv::Mat pole(void){
+  //Contains two 'unknown' (grey) areas on the map
+  double mapSize = 20.0;
+  double res = 0.1;
+  int pixels = (int) mapSize / res;
 
-TEST(ConfigSpace, expanded){
+  cv::Mat image(pixels, pixels, CV_8UC1, cv::Scalar(255, 255, 255));
+  cv::circle(image, cv::Point(100,100), 50, cv::Scalar(0,0,0), -1);
+
+  return image;
+}
+
+/* Tests for testing a configuration space for connections */
+
+TEST(ConfigSpace, Expand){
   LocalMap l(20.0, 0.1);
 
   cv::Mat img = hallway();
@@ -100,8 +115,7 @@ TEST(ConfigSpace, expanded){
   EXPECT_EQ(125, img.at<uchar>(21, 21));
 }
 
-/*! TEST: Testing graphical connections between points on an opencv image !*/
-TEST(LocalMap, connectInEmptyMap){
+TEST(ConfigSpace, ConnectInEmptyMap){
   LocalMap l(20.0, 0.1);
 
   cv::Mat img = blankMap();
@@ -115,7 +129,7 @@ TEST(LocalMap, connectInEmptyMap){
   ASSERT_TRUE(l.canConnect(img, cv::Point(0, 0), cv::Point(200, 200)));
 }
 
-TEST(LocalMap, connectInPartionedMap){
+TEST(ConfigSpace, ConnectInPartionedMap){
   LocalMap l(20.0, 0.1);
 
   cv::Mat img = partionedMap();
@@ -132,7 +146,7 @@ TEST(LocalMap, connectInPartionedMap){
   ASSERT_TRUE(l.canConnect(img, cv::Point(110, 90), cv::Point(150, 50)));
 }
 
-TEST(LocalMap, connectInUnknownMap){
+TEST(ConfigSpace, ConnectInUnknownMap){
   LocalMap l(20.0, 0.1);
 
   cv::Mat img = partionedMap();
@@ -146,17 +160,17 @@ TEST(LocalMap, connectInUnknownMap){
   ASSERT_FALSE(l.canConnect(img, cv::Point(0, 0), cv::Point(200, 200)));
 }
 
-TEST(LocalMap, connectOutsideMap){
+TEST(ConfigSpace, ConnectOutsideMap){
   LocalMap l(20.0, 0.1);
 
   cv::Mat img = blankMap();
   ASSERT_FALSE(l.canConnect(img, cv::Point(-100, 200), cv::Point(100, 100)));
   ASSERT_FALSE(l.canConnect(img, cv::Point(100, 200), cv::Point(-100, -100)));
 }
-/*! TEST: Testing graphical connections END !*/
 
-/*! TEST: Converting Points from globalOrds to local pixel points !*/
-TEST(LocalMap, convertPositivePoints){
+/* Tests for converting from TGlobalOrds to local OgMap points */
+
+TEST(LocalMap, ConvertPositivePoints){
   LocalMap l(20.0, 0.1);
 
   TGlobalOrd ref = {10, 10};
@@ -169,7 +183,7 @@ TEST(LocalMap, convertPositivePoints){
   EXPECT_EQ(cv::Point(100, 300), l.convertToPoint(ref, p5)); //Outside the map space
 }
 
-TEST(LocalMap, convertDecimalPoints){
+TEST(LocalMap, ConvertDecimalPoints){
   LocalMap l (20.0, 0.1);
   TGlobalOrd ref = {10, 10};
   TGlobalOrd p1 = {5.1, 15.2};
@@ -183,7 +197,7 @@ TEST(LocalMap, convertDecimalPoints){
   EXPECT_EQ(cv::Point(48, 51), l.convertToPoint(ref, p1));
 }
 
-TEST(LocalMap, convertNegativePoints){
+TEST(LocalMap, ConvertNegativePoints){
   LocalMap l(20.0, 0.1);
 
   TGlobalOrd ref = {-10, -10};
@@ -195,7 +209,7 @@ TEST(LocalMap, convertNegativePoints){
   EXPECT_EQ(cv::Point(150, 150), l.convertToPoint(ref, p4));
 }
 
-TEST(LocalMap, convertPointsOnLine){
+TEST(LocalMap, ConvertPointsOnLine){
   LocalMap l(20.0, 0.1);
 
   TGlobalOrd ref = {0, 0};
@@ -206,10 +220,10 @@ TEST(LocalMap, convertPointsOnLine){
   EXPECT_EQ(cv::Point(50, 100), l.convertToPoint(ref, p3));
   EXPECT_EQ(cv::Point(100, 150), l.convertToPoint(ref, p4));
 }
-/*! TEST: Converting Points END !*/
 
-/*! TEST: Rendering PRM on an opencv image !*/
-TEST(LocalMap, renderPRM){
+/* Tests for rendering on an OgMap (opencv image) */
+
+TEST(LocalMap, RenderPRM){
   LocalMap l(20.0, 0.1);
 
   cv::Point p1(50, 50), p2(150, 50), p3(50, 150), p4(100, 300);
@@ -245,7 +259,7 @@ TEST(LocalMap, renderPRM){
   }
 }
 
-TEST(LocalMap, renderPath){
+TEST(LocalMap, RenderPath){
   LocalMap l(20.0, 0.1);
 
   cv::Point p1(50, 50), p2(150, 50), p3(50, 150), p4(100, 300);
@@ -266,6 +280,8 @@ TEST(LocalMap, renderPath){
     }
   }
 }
+
+/* Sanity tests for image generation using opencv */
 
 TEST(ImageGen, CorrectDimensions){
   double mapSize=20.0;
@@ -289,7 +305,8 @@ TEST(ImageGen, CorrectDimensions){
   // Let's check the centre is now black (0)
   EXPECT_EQ(0, image.at<uchar>(pixels/2,pixels/2));
 }
-/*! TEST: Rendering PRM on an opencv image END !*/
+
+/* Probablistic road map generation tests */
 
 TEST(PrmGen, SimplePath){
   cv::Mat map = partionedMap2();
@@ -302,10 +319,10 @@ TEST(PrmGen, SimplePath){
 
   std::vector<TGlobalOrd> path = g.build(map, robot, goal);
 
-  if(path.size() > 0){
+  if(SHOW_PRM){
     g.showOverlay(colourMap, path);
     cv::imshow("test", colourMap);
-    cv::waitKey(10000);
+    cv::waitKey(1000);
   }
 
   ASSERT_TRUE(path.size() > 0);
@@ -324,10 +341,10 @@ TEST(PrmGen, ComplicatedPath){
 
   std::vector<TGlobalOrd> path = g.build(map, start, goal);
 
-  if(path.size() > 0){
+  if(SHOW_PRM){
     g.showOverlay(colourMap, path);
     cv::imshow("test", colourMap);
-    cv::waitKey(10000);
+    cv::waitKey(1000);
   }
 
   ASSERT_TRUE(path.size() > 0);
@@ -344,10 +361,30 @@ TEST(PrmGen, Hallway){
 
   std::vector<TGlobalOrd> path = g.build(map, start, goal);
 
-  if(path.size() > 0){
+  if(SHOW_PRM){
     g.showOverlay(colourMap, path);
     cv::imshow("test", colourMap);
-    cv::waitKey(10000);
+    cv::waitKey(1000);
+  }
+
+  ASSERT_TRUE(path.size() > 0);
+}
+
+TEST(PrmGen, Pole){
+  cv::Mat map = pole();
+  cv::Mat colourMap;
+  cv::cvtColor(map, colourMap, CV_GRAY2BGR);
+
+  GlobalMap g(20.0, 0.1, 0.2);
+  TGlobalOrd robot{10, 10}, start{1, 1}, goal{19, 19};
+  g.setReference(robot);
+
+  std::vector<TGlobalOrd> path = g.build(map, start, goal);
+
+  if(SHOW_PRM){
+    g.showOverlay(colourMap, path);
+    cv::imshow("test", colourMap);
+    cv::waitKey(1000);
   }
 
   ASSERT_TRUE(path.size() > 0);
@@ -368,9 +405,10 @@ TEST(PrmGen, NoPath){
   EXPECT_EQ(0, path.size());
 }
 
-//These tests are based on the graph examples found
+/* Graph tests */
+//The below tests are based on the graph examples found
 //on the website: https://brilliant.org/wiki/dijkstras-short-path-finder/
-TEST(Graphs, FoundPath1){
+TEST(Graph, FoundPath1){
   Graph g(7);
 
   g.addVertex(0);
@@ -410,7 +448,7 @@ TEST(Graphs, FoundPath1){
   EXPECT_EQ(8, path[4]);
 }
 
-TEST(Graphs, FoundPath2){
+TEST(Graph, FoundPath2){
   Graph g(7);
 
   g.addVertex(0);
@@ -448,7 +486,7 @@ TEST(Graphs, FoundPath2){
   EXPECT_EQ(8, path[4]);
 }
 
-TEST(Graphs, UnorderedVerticies){
+TEST(Graph, UnorderedVerticies){
   Graph g(7);
 
   g.addVertex(10);
@@ -486,7 +524,7 @@ TEST(Graphs, UnorderedVerticies){
   EXPECT_EQ(50, path[4]);
 }
 
-TEST(Graphs, NoPath){
+TEST(Graph, NoPath){
   Graph g(7);
 
   g.addVertex(0);
@@ -517,7 +555,7 @@ TEST(Graphs, NoPath){
   EXPECT_EQ(0, g.shortestPath(0, 8).size());
 }
 
-TEST(Graphs, MaxNeighbours){
+TEST(Graph, MaxNeighbours){
   Graph g(3);
 
   g.addVertex(0);

@@ -49,9 +49,9 @@ bool Graph::addEdge(const vertex v, const vertex u, const weight w)
   return true;
 }
 
-/*! @brief Finds the closest vertex in the queue.
+/*! @brief Finds the closest vertex in a queue.
  *
- *  @param distances This contains the distance between each vertex and the start.
+ *  @param distances This contains the distance between each vertex and some pre-determined start.
  *  @param q The queue of available verticies to search within.
  *  @return vertex - The next closest vertex.
  *
@@ -89,9 +89,8 @@ std::vector<vertex> Graph::constructPath(std::map<vertex, vertex> parents, verte
 }
 
 std::vector<vertex> Graph::shortestPath(const vertex start, const vertex goal){
-  //This map contains the distances between various nodes and the start node.
-  std::map<vertex, vertex> parents; //used to reconstruct the shortest path
-  std::map<vertex, double> distances;
+  std::map<vertex, vertex> parents;   //used to reconstruct the shortest path
+  std::map<vertex, double> distances; //This map contains the distances between various nodes and the start node.
   std::vector<vertex> queue, path;
 
   if(container_.find(start) == container_.end() ||
@@ -99,6 +98,7 @@ std::vector<vertex> Graph::shortestPath(const vertex start, const vertex goal){
     return path; //Empty path between two unknown verticies
   }
 
+  //The below algo is an implementation of Dijkstra's shortest path
   for(auto const &v: container_){
     //Initially, distances to other verticies is equal to infinity
     distances.insert(std::pair<vertex, double>(v.first, std::numeric_limits<double>::infinity()));
@@ -117,6 +117,8 @@ std::vector<vertex> Graph::shortestPath(const vertex start, const vertex goal){
     {
       double alt = distances[v] + n.second; //neighbour distance + weight
       if(alt < distances[n.first]){
+        //Update parent and distance if there is a shorter path
+        //back to the start
         distances[n.first] = alt;
         parents[n.first] = v;
       }
@@ -125,7 +127,7 @@ std::vector<vertex> Graph::shortestPath(const vertex start, const vertex goal){
     queue.erase(std::remove(queue.begin(), queue.end(), v), queue.end());
 
     if(std::find(queue.begin(), queue.end(), goal) == queue.end()){
-      break;
+      break; //No point processing the whole graph if a path to the goal is found
     }
   }
 

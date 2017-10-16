@@ -61,28 +61,27 @@ public:
    */
   std::vector<vertex> shortestPath(const vertex start, const vertex goal);
 
-  /*! @brief Returns the container representing the graph.
+  /*! @brief Checks if one is able to connect to a given vertex.
+   *
+   *  This is determined by the number of vertex connections
+   *  already in the graph.
+   *
+   *  @param v The vertex to check for.
+   *  @return TRUE - If we can connect
+   */
+  bool canConnect(const vertex v);
+
+  /*! @brief Returns a container representing the graph.
    *
    *  @return map<vertex, edges> - The container that represents the graph.
    */
   std::map<vertex, edges> container() const;
 
-  /*! @brief Checks if one is able to connect to a given vertex.
-   *
-   *  This is determined by the supplied weighting, and whether
-   *  the vertex has connections to spare.
-   *
-   *  @param v The vertex to check for.
-   *  @param w The potential weighting.
-   *  @return TRUE - If we can connect
-   */
-  bool canConnect(const vertex v);
-
 private:
   unsigned int maxNeighbours_;         /*!< A vertex has a max amount of neighbours */
   std::map<vertex, edges> container_;  /*!< A container of all verticies and their neighbours (edges) */
 
-  /*! @brief Constructs the path between start and goal.
+  /*! @brief Constructs a path between start and goal.
    *
    *  @param parents Used to determine the parents of each node all the way back to the start.
    *  @param goal The end vertex, the goal to reach.
