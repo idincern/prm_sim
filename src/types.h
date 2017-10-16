@@ -8,6 +8,12 @@
 #ifndef TYPES
 #define TYPES
 
+#include "nav_msgs/Odometry.h"
+#include <opencv2/opencv.hpp>
+#include <thread>
+#include <deque>
+#include <mutex>
+
 struct TGlobalOrd
 {
   double x;   /*!< x coordinate within global map (m) */
@@ -16,6 +22,14 @@ struct TGlobalOrd
   bool operator== (const TGlobalOrd &o1){
     return (this->x == o1.x && this->y == o1.y);
   }
+};
+
+//TODO: Check naming conventions....
+struct TWorldInfoBuffer
+{
+  std::deque<geometry_msgs::Pose> poseDeq;
+  std::deque<cv::Mat> ogMapDeq;
+  std::mutex access;
 };
 
 #endif // TYPES
