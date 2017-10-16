@@ -15,6 +15,9 @@
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/imgproc/imgproc.hpp>
 
+static const cv::Scalar PrmColour = cv::Scalar(255,0,0);  /* Blue denotes prm colour */
+static const cv::Scalar PathColour = cv::Scalar(0,0,255); /* Red denotes path colour */
+
 LocalMap::LocalMap(double mapSize, double res): resolution_(res)
 {
   pixelMapSize_ = (int) mapSize / res;
@@ -62,11 +65,11 @@ bool LocalMap::canConnect(cv::Mat &m, cv::Point start, cv::Point end){
 void LocalMap::overlayPRM(cv::Mat &m, std::vector<std::pair<cv::Point, cv::Point>> prm){
   for(auto const &neighbours: prm){
     //Draw circles to represent points
-    cv::circle(m, neighbours.first, 2, cv::Scalar(255,0,0),-1);
-    cv::circle(m, neighbours.second, 2, cv::Scalar(255,0,0),-1);
+    cv::circle(m, neighbours.first, 1, PrmColour,-1);
+    cv::circle(m, neighbours.second, 1, PrmColour,-1);
 
     //Connect neighbours
-    cv::line(m, neighbours.first, neighbours.second, cv::Scalar(255,0,0), 1);
+    cv::line(m, neighbours.first, neighbours.second, PrmColour, 1);
   }
 }
 
@@ -79,24 +82,24 @@ void LocalMap::overlayPath(cv::Mat &m, std::vector<cv::Point> path){
 
   for(auto const &node: path){
     //Draw circle to represent point
-    cv::circle(m, node, 2, cv::Scalar(0,0,255),-1);
+    cv::circle(m, node, 1,PathColour,-1);
 
     //Connect to previous point
-    cv::line(m, node, previousNode, cv::Scalar(0,0,255),1);
+    cv::line(m, node, previousNode,PathColour,1);
     previousNode = node;
   }
 }
 
 //robotDiameter in m
-void LocalMap::expandConfigSpace(cv::Mat &m, double robotDiameter){
-  int pixelSize = robotDiameter / resolution_;
+void LocalMap::expandConfigSpace(cv::Mat &space, double robotDiameter){
+  int pixDiameter = robotDiameter / resolution_;
   std::vector<cv::Point> pointsToExpand;
 
   //For each point on the map that isn't free space,
   //expand its boundary by the size of the robot diameter.
-  for(int i = 0; i < m.rows; i++){
-    for(int j = 0; j < m.cols; j++){
-      if(m.at<uchar>(j,i) != 255){
+  for(int i = 0; i < space.rows; i++){
+    for(int j = 0; j < space.cols; j++){
+      if(space.at<uchar>(j,i) != 255){
         pointsToExpand.push_back({i, j});
       }
     }
@@ -104,10 +107,12 @@ void LocalMap::expandConfigSpace(cv::Mat &m, double robotDiameter){
 
   //Simply draw a circle equal to the size of the robot at that point
   for(auto const &p: pointsToExpand){
-    unsigned int inten = m.at<uchar>(p);
-    cv::circle(m, p, pixelSize, (inten, inten, inten), -1);
-  }
+    unsigned int inten = space.at<uchar>(p);
 
+    //Even though this takes a radius, we double it (diameter) to ensure
+    //there is some space between robot and obstacle
+    cv::circle(space, p, pixDiameter, (inten, inten, inten), -1);
+  }
 }
 
 bool LocalMap::isAccessible(cv::Mat &m, cv::Point p){

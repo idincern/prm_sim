@@ -57,10 +57,10 @@ public:
    *  we expand the boundaries of non-free space by the diameter of
    *  the robot.
    *
-   *  @param m The configuration space (map) to expand.
+   *  @param space The space (map) to expand.
    *  @param robotDiameter The diameter of the robot in meters.
    */
-  void expandConfigSpace(cv::Mat &m, double robotDiameter);
+  void expandConfigSpace(cv::Mat &space, double robotDiameter);
 
   /*! @brief Checks if a point is within the known local map.
    *

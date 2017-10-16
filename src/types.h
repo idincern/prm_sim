@@ -8,12 +8,16 @@
 #ifndef TYPES
 #define TYPES
 
-typedef struct
+struct TGlobalOrd
 {
   double x;   /*!< x coordinate within global map (m) */
   double y;   /*!< y coordinate within global map (m) */
 
-} TGlobalOrd;
+  bool operator== (const TGlobalOrd &o1){
+    return (this->x == o1.x && this->y == o1.y);
+  }
+
+};
 
 #endif // TYPES
 

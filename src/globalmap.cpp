@@ -45,35 +45,37 @@ std::vector<TGlobalOrd> GlobalMap::convertPath(std::vector<vertex> path){
   return ordPath;
 }
 
-std::vector<TGlobalOrd> GlobalMap::optimisePath(std::vector<TGlobalOrd> path){
-    std::vector<TGlobalOrd> optPath;
+std::vector<TGlobalOrd> GlobalMap::optimisePath(cv::Mat &cspace, std::vector<TGlobalOrd> path, TGlobalOrd goal){
+  std::vector<TGlobalOrd> optPath;
 
-    if(path.size() == 0){
-        return optPath;
+  if(path.size() == 0){
+    return optPath; //No path to optimise return empty path
+  }
+
+  //Start with the first node
+  optPath.push_back(path.at(0));
+
+  //While the goal is not in the optimised path
+  while(std::find(optPath.begin(), optPath.end(), goal) == optPath.end()){
+    TGlobalOrd ordCurr = optPath.back();
+    cv::Point pCurrent = lmap_.convertToPoint(reference_, ordCurr);
+
+    //Starting at the end of the path and moving backwards, determine
+    //if we can directly connect to the current ordinate
+    for(unsigned i = path.size(); i-- > 0;){
+      if(path[i] == ordCurr){
+        break; //We have reached the current node
+      }
+
+      cv::Point pTest = lmap_.convertToPoint(reference_, path[i]);
+      if(lmap_.canConnect(cspace, pCurrent, pTest)){
+        optPath.push_back(path[i]);
+        break; //We have found the latest node to push back to
+      }
     }
+  }
 
-    optPath.push_back(path.at(0));
-
-    //Will not work
-    while (optPath.size() != path.size()){
-        TGlobalOrd current = optPath.back();
-        cv::Point pCurrent = lmap_.convertToPoint(reference_, current);
-
-        for (unsigned i = path.size(); i-- > 0; ){
-            cv::Point pTest = lmap_.convertToPoint(reference_, path[i]);
-            if(lmap_.canConnect(m, pCurrent, pTest)){
-                //
-            }
-        }
-        std::vector<TGlobalOrd>::reverse_iterator rit = path.begin();
-
-        for(auto const &ord: rit){
-
-        }
-
-    }
-
-
+  return optPath;
 }
 
 std::vector<std::pair<cv::Point, cv::Point>> GlobalMap::constructPRM()
@@ -228,7 +230,8 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd start, TGlobalOr
 
   std::vector<vertex> vPath = graph_.shortestPath(vStart, vGoal);
   if(vPath.size() > 0){
-    return convertPath(vPath);
+    return optimisePath(m, convertPath(vPath), goal);
+    //return convertPath(vPath);
   }
 
   return path;
