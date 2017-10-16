@@ -302,10 +302,6 @@ TEST(PrmGen, SimplePath){
 
   std::vector<TGlobalOrd> path = g.build(map, robot, goal);
 
-  g.showOverlay(colourMap, path);
-  cv::imshow("test", colourMap);
-  cv::waitKey(10000);
-
   ASSERT_TRUE(path.size() > 0);
 }
 
@@ -323,9 +319,9 @@ TEST(PrmGen, ComplicatedPath){
   std::vector<TGlobalOrd> path = g.build(map, start, goal);
 
   //VISUAL DISPLAY...
-  g.showOverlay(colourMap, path);
-  cv::imshow("test", colourMap);
-  cv::waitKey(10000);
+  //g.showOverlay(colourMap, path);
+  //cv::imshow("test", colourMap);
+  //cv::waitKey(10000);
 
   ASSERT_TRUE(path.size() > 0);
 }
@@ -340,6 +336,7 @@ TEST(PrmGen, Hallway){
   g.setReference(robot);
 
   std::vector<TGlobalOrd> path = g.build(map, start, goal);
+
   ASSERT_TRUE(path.size() > 0);
 }
 

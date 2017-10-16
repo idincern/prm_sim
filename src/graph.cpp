@@ -13,7 +13,6 @@
 
 #include <algorithm>
 #include <limits>
-#include <iostream> //TODO: REMOVE
 #include <string>
 
 Graph::Graph(unsigned int maxNeighbours, weight maxWeight):
@@ -77,62 +76,26 @@ vertex closestVertex(std::map<vertex, double> distances, std::vector<vertex> q){
   return minVertex;
 }
 
-std::vector<vertex> Graph::constructPath(std::map<vertex, double> distances, const vertex start, const vertex goal){
-  //TODO: REfactor and make better! This is taking the time!
+std::vector<vertex> Graph::constructPath(std::map<vertex, vertex> parents, vertex goal){
   std::vector<vertex> path;
 
-  if(distances[goal] == std::numeric_limits<double>::infinity()){
-    return path; //The goal has not been reached, return an empty path
+  if(parents.find(goal) == parents.end()){
+      return path; //Goal has not been found
   }
 
   path.push_back(goal);
-  vertex current = goal;
 
-  //While the start vertex has not been connected to the goal
-  std::cout << "Starting construction..." << std::endl;
-
-  while(current != start){
-    double minD = -1;
-    vertex minV = current;
-
-    edges neighbours = container_[current];
-
-    std::cout << "Current " << current << std::endl;
-    std::cout << "Neighbours:" << std::endl;
-    for(auto const &n: neighbours){
-
-//      if(distances[n.first] == std::numeric_limits<double>::infinity()){
-//        continue;
-//      }
-
-      double totalD = distances[n.first] + n.second;
-      if(minD == -1){
-        minD = totalD;
-      } else if(totalD < minD){
-        minD = totalD;
-        minV = n.first;
-      }
-
-      std::cout << "  Node:" << n.first << std::endl;
-      std::cout << "  Distances:" << distances[n.first] << std::endl;
-    }
-
-
-
-//    std::cout << "  minV = " << minV << std::endl;
-//    std::cout << "  distance @ minV = " << distances[minV] << std::endl;
-
-    path.push_back(minV);
-    current = minV;
+  while(parents.find(path.back()) != parents.end()){
+    path.push_back(parents.at(path.back()));
   }
 
-  std::cout << "Reversing path..." << std::endl;
   std::reverse(path.begin(), path.end());
   return path;
 }
 
 std::vector<vertex> Graph::shortestPath(const vertex start, const vertex goal){
   //This map contains the distances between various nodes and the start node.
+  std::map<vertex, vertex> parents; //used to reconstruct the shortest path
   std::map<vertex, double> distances;
   std::vector<vertex> queue, path;
 
@@ -147,8 +110,6 @@ std::vector<vertex> Graph::shortestPath(const vertex start, const vertex goal){
     queue.push_back(v.first);
   }
 
-  std::cout << "init'd' distance queue..." << std::endl;
-
   //For the start position the distance to itself is 0
   distances[start] = 0;
 
@@ -162,21 +123,18 @@ std::vector<vertex> Graph::shortestPath(const vertex start, const vertex goal){
       double alt = distances[v] + n.second; //neighbour distance + weight
       if(alt < distances[n.first]){
         distances[n.first] = alt;
+        parents[n.first] = v;
       }
-    }
-
-    if(std::find(queue.begin(), queue.end(), goal) == queue.end()){
-      break;
     }
 
     queue.erase(std::remove(queue.begin(), queue.end(), v), queue.end());
 
-    //std::cout << "  Queue size = " << queue.size() << std::endl;
+    if(std::find(queue.begin(), queue.end(), goal) == queue.end()){
+      break;
+    }
   }
 
-  std::cout << "Finished processing queue, constructing path..." << std::endl;
-
-  return constructPath(distances, start, goal);
+  return constructPath(parents, goal);
 }
 
 std::map<vertex, edges> Graph::container() const

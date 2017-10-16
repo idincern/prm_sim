@@ -28,8 +28,6 @@ public:
   //Overlays internal PRM and path onto a colour image
   void showOverlay(cv::Mat &m, std::vector<TGlobalOrd> path);
 
-  //TODO: FUNCTION that excepts a mat and expands the size of any grey or black value by the size of the robot
-
   void setReference(const TGlobalOrd reference);
 
   void setMapSize(double mapSize);
@@ -42,8 +40,6 @@ private:
   TGlobalOrd reference_;                    /*!< Reference ordinate for the local map, this is usually the robot position */
   double mapSize_;                          /*!< The mapSize in m */
   double robotDiameter_;                    /*!< The diameter of the robot in m */
-
-  //TODO: MAKE REF an internal variable?
 
   //returns true if ordinates are in vertexLUT_;
   bool existsAsVertex(TGlobalOrd ord);

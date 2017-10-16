@@ -85,14 +85,13 @@ private:
 
   /*! @brief Constructs the path between start and goal.
    *
-   *  @param distances This contains the distance between each vertex and the start (generated in shortest path).
-   *  @param start The start vertex.
+   *  @param parents Used to determine the parents of each node all the way back to the start.
    *  @param goal The end vertex, the goal to reach.
    *  @return vector - Will return a vector of verticies that represent
    *                   the shortest path between start and goal. This
    *                   vector will be empty if there is no path.
    */
-  std::vector<vertex> constructPath(std::map<vertex, double> distances, const vertex start, const vertex goal);
+  std::vector<vertex> constructPath(std::map<vertex, vertex> parents, vertex goal);
 };
 
 #endif // GRAPH_H

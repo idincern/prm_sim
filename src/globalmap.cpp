@@ -14,7 +14,7 @@
 #include <chrono>
 
 static const unsigned int MaxGraphDensity = 5;  /*!< The max amount of neighbours a vertex in the graph can have */
-static const double MaxDistance = 4;          /*!< The max distance between two verticies in the graph (2.5) */
+static const double MaxDistance = 3;          /*!< The max distance between two verticies in the graph (2.5) */
 
 GlobalMap::GlobalMap(double mapSize, double mapRes, double robotDiameter):
   graph_(Graph(MaxGraphDensity, MaxDistance)), lmap_(LocalMap(mapSize, mapRes))
@@ -183,14 +183,13 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd start, TGlobalOr
 
   unsigned int nodeCnt(0);
 
-  while(nodeCnt < 50){
+  //TODO: Dynamically work out nodes?
+  while(nodeCnt < 200){
     TGlobalOrd randomOrd;
     //Generate random ords within the map space...
     std::default_random_engine generator(std::chrono::duration_cast<std::chrono::nanoseconds>
                                          (std::chrono::system_clock::now().time_since_epoch()).count());
 
-    //TODO: generate points only in reference area??
-    //TODO: Check if good.
     std::uniform_real_distribution<double> xDist(reference_.x - (mapSize_/2), reference_.x + (mapSize_/2));
     std::uniform_real_distribution<double> yDist(reference_.y - (mapSize_/2), reference_.y + (mapSize_/2));
 
@@ -208,16 +207,15 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &m, TGlobalOrd start, TGlobalOr
     //See if vertex exists in graph already otherwise, attempt to connect to other verticies
     vertex vRand = findOrAdd(randomOrd);
     nodeCnt++;
+
+    connectNodes(m);
   }
 
   //Check for path
   connectNodes(m);
 
-  std::cout << "calculating path..." << std::endl;
-
   vPath = graph_.shortestPath(vStart, vGoal);
   if(vPath.size() > 0){
-    std::cout << "found path..." << std::endl;
     return convertPath(vPath);
   }
 
