@@ -45,6 +45,37 @@ std::vector<TGlobalOrd> GlobalMap::convertPath(std::vector<vertex> path){
   return ordPath;
 }
 
+std::vector<TGlobalOrd> GlobalMap::optimisePath(std::vector<TGlobalOrd> path){
+    std::vector<TGlobalOrd> optPath;
+
+    if(path.size() == 0){
+        return optPath;
+    }
+
+    optPath.push_back(path.at(0));
+
+    //Will not work
+    while (optPath.size() != path.size()){
+        TGlobalOrd current = optPath.back();
+        cv::Point pCurrent = lmap_.convertToPoint(reference_, current);
+
+        for (unsigned i = path.size(); i-- > 0; ){
+            cv::Point pTest = lmap_.convertToPoint(reference_, path[i]);
+            if(lmap_.canConnect(m, pCurrent, pTest)){
+                //
+            }
+        }
+        std::vector<TGlobalOrd>::reverse_iterator rit = path.begin();
+
+        for(auto const &ord: rit){
+
+        }
+
+    }
+
+
+}
+
 std::vector<std::pair<cv::Point, cv::Point>> GlobalMap::constructPRM()
 {
   std::vector<std::pair<cv::Point, cv::Point>> prm;

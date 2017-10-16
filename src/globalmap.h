@@ -66,6 +66,8 @@ private:
   void connectNode(cv::Mat &m, vertex node, bool imposeMaxDist);
 
   void connectNodes(cv::Mat &m, bool imposeMaxDist);
+
+  std::vector<TGlobalOrd> optimisePath(std::vector<TGlobalOrd> path);
 };
 
 #endif // GLOBALMAP_H
