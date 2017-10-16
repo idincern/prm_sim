@@ -19,6 +19,10 @@
 class GlobalMap
 {
 public:
+  /*! @brief Default constructor for GlobalMap.
+   */
+  GlobalMap();
+
   /*! @brief Constructor for a GlobalMap.
    *
    *  @param mapSize The size of the OgMap in meters (square maps only).

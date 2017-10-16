@@ -15,6 +15,20 @@
 
 static const unsigned int MaxGraphDensity = 5;  /*!< The max amount of neighbours a vertex in the graph can have */
 static const double MaxDistance = 2.5;          /*!< The max distance between two verticies in the graph (2.5) */
+static const double DefMapSize = 20.0; //TODO!!
+static const double DefBotDiameter = 0.2;
+static const double DefResolution = 0.1;
+
+GlobalMap::GlobalMap():
+  graph_(Graph(MaxGraphDensity)), lmap_(LocalMap(DefMapSize, DefResolution))
+{
+  mapSize_ = DefMapSize;   //Default
+  nextVertexId_ = 0;
+  reference_.x = 0;
+  reference_.y = 0;
+  robotDiameter_ = DefBotDiameter;
+}
+
 
 GlobalMap::GlobalMap(double mapSize, double mapRes, double robotDiameter):
   graph_(Graph(MaxGraphDensity)), lmap_(LocalMap(mapSize, mapRes))

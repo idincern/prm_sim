@@ -6,6 +6,8 @@
  *  @date 12-10-2017
 */
 #include "simulator.h"
+#include "globalmap.h"
+
 #include "sensor_msgs/image_encodings.h"
 #include "geometry_msgs/PoseArray.h"
 #include "nav_msgs/Odometry.h"
