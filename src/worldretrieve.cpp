@@ -32,7 +32,7 @@ WorldRetrieve::WorldRetrieve(ros::NodeHandle nh, TWorldInfoBuffer &buffer):
 void WorldRetrieve::heartbeatThread(void)
 {
   while(ros::ok()){
-    ROS_INFO("I am the watcher of the worlds..."); // TODO: Better message/is this necessary?
+    ROS_INFO("I am the watcher of worlds..."); // TODO: Better message/is this necessary?
 
     //Display a heartbeat message every so often
     std::this_thread::sleep_for (std::chrono::seconds(5));
