@@ -67,10 +67,10 @@ find_package(Eigen3 REQUIRED)
 # )
 
 ## Generate services in the 'srv' folder
- add_service_files(
-   FILES
-   RequestGoal.srv
- )
+add_service_files(
+  FILES
+  RequestGoal.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -80,10 +80,10 @@ find_package(Eigen3 REQUIRED)
 # )
 
 ## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-   sensor_msgs
- )
+generate_messages(
+  DEPENDENCIES
+  sensor_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -150,7 +150,7 @@ add_library(maps src/globalmap.cpp src/graph.cpp src/localmap.cpp src/types.h)
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/prm_sim_node.cpp)
-add_executable(main src/main.cpp src/worldretrieve.cpp)
+add_executable(${PROJECT_NAME}_node src/main.cpp src/worldretrieve.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -166,7 +166,7 @@ add_executable(main src/main.cpp src/worldretrieve.cpp)
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-target_link_libraries(main maps ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES})
 
 #############
 ## Install ##

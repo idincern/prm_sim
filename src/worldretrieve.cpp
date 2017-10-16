@@ -29,8 +29,18 @@ WorldRetrieve::WorldRetrieve(ros::NodeHandle nh, TWorldInfoBuffer &buffer):
   ogmap_ = it.subscribe("map_image/full", 1, &WorldRetrieve::ogMapCallBack, this);
 }
 
+void WorldRetrieve::heartbeatThread(void)
+{
+  while(ros::ok()){
+    ROS_INFO("I am the watcher of the worlds..."); // TODO: Better message/is this necessary?
+
+    //Display a heartbeat message every so often
+    std::this_thread::sleep_for (std::chrono::seconds(5));
+  }
+}
+
 //TODO: Should we sepearte the world buffer... both callbacks locking the buffer
-void WorldRetrieve::odomCallBack(const nav::msgs::OdometryConstPtr &msg){
+void WorldRetrieve::odomCallBack(const nav_msgs::OdometryConstPtr &msg){
   geometry_msgs::Pose pose = msg->pose.pose;
 
   buffer_.access.lock();
@@ -41,6 +51,7 @@ void WorldRetrieve::odomCallBack(const nav::msgs::OdometryConstPtr &msg){
 void WorldRetrieve::ogMapCallBack(const sensor_msgs::ImageConstPtr &msg){
   cv_bridge::CvImagePtr cvPtr;
 
+  //TODO: Enforce grey images on queue
   try
   {
     if (enc::isColor(msg->encoding))
@@ -56,11 +67,10 @@ void WorldRetrieve::ogMapCallBack(const sensor_msgs::ImageConstPtr &msg){
 
   buffer_.access.lock();
 
-  buffer_.imageDeq.push_back(cvPtr->image);
+  buffer_.ogMapDeq.push_back(cvPtr->image);
 
-  if(buffer_.imageDeq.size() > 2){
-    buffer_.imageDeq.pop_front();
-    buffer_.timeStampDeq.pop_front();
+  if(buffer_.ogMapDeq.size() > 2){
+    buffer_.ogMapDeq.pop_front();
   }
 
   buffer_.access.unlock();
