@@ -317,3 +317,14 @@ void GlobalMap::setMapSize(double mapSize)
   mapSize_ = mapSize;
   lmap_.setMapSize(mapSize);
 }
+
+void GlobalMap::setRobotDiameter(double robotDiameter)
+{
+    robotDiameter_ = robotDiameter;
+}
+
+void GlobalMap::setResolution(double resolution)
+{
+    lmap_.setResolution(resolution);
+}
+

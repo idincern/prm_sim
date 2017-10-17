@@ -38,7 +38,10 @@ Simulator::Simulator(ros::NodeHandle nh, TWorldInfoBuffer &buffer):
   pn.param<double>("resolution", mapResolution, 0.1);
   pn.param<double>("robot_diameter", robotDiameter, 0.2);
 
-  gmap_ = GlobalMap(mapSize, mapResolution, robotDiameter);
+  //Update default potentially... TODO
+  gmap_.setMapSize(mapSize);
+  gmap_.setResolution(mapResolution);
+  gmap_.setRobotDiameter(robotDiameter);
 }
 
 

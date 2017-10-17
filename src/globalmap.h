@@ -68,6 +68,11 @@ public:
    */
   void setMapSize(double mapSize);
 
+  //TODO
+  void setRobotDiameter(double robotDiameter);
+
+  void setResolution(double resolution);
+
 private:
   Graph graph_;                             /*!< A graph representation of the roadmap network */
   LocalMap lmap_;                           /*!< An object for interacting with the ogMap provided to this object */
