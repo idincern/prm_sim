@@ -591,6 +591,9 @@ TEST(Graph, MaxNeighbours){
   ASSERT_FALSE(g.addEdge(0, 4, 1.0));
 }
 
+//TODO:Rename this utests
+//TODO: Expect arguments on cmdline to optionally run with images
+//TODO: Test for narrow corridors
 int main (int argc, char **argv){
   //Run with './devel/lib/prm_sim/prm_sim-test' in catkin_ws
   ::testing::InitGoogleTest(&argc, argv);

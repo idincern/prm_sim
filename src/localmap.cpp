@@ -62,9 +62,9 @@ void LocalMap::expandConfigSpace(cv::Mat &space, double robotDiameter){
   for(auto const &p: pointsToExpand){
     unsigned int inten = space.at<uchar>(p);
 
-    //Even though this takes a radius, we double it (diameter) to ensure
+    //TODO: Even though this takes a radius, we double it (diameter) to ensure
     //there is some space between robot and obstacle
-    cv::circle(space, p, pixDiameter, (inten, inten, inten), -1);
+    cv::circle(space, p, pixDiameter / 2, (inten, inten, inten), -1);
   }
 }
 
@@ -88,7 +88,7 @@ void LocalMap::overlayPath(cv::Mat &space, std::vector<cv::Point> path){
 
   for(auto const &node: path){
     //Draw circle to represent point
-    cv::circle(space, node, 2,PathColour,-1);
+    cv::circle(space, node, 1,PathColour,-1);
 
     //Connect to previous point
     cv::line(space, node, previousNode,PathColour,1);

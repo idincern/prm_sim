@@ -1,5 +1,6 @@
 #include "ros/ros.h"
 
+#include "simulator.h"
 #include "worldretrieve.h"
 #include "types.h"
 
@@ -21,8 +22,10 @@ int main(int argc, char **argv) {
   TWorldInfoBuffer buffer;
 
   std::shared_ptr<WorldRetrieve> wr(new WorldRetrieve(nh, buffer));
+  std::shared_ptr<Simulator> sim(new Simulator(nh, buffer));
 
   std::thread t1(&WorldRetrieve::heartbeatThread, wr);
+  std::thread t2(&Simulator::prmThread, sim);
 
   /**
    * ros::spin() will enter a loop, pumping callbacks.  With this version, all
@@ -37,6 +40,7 @@ int main(int argc, char **argv) {
   ros::shutdown();
 
   t1.join();
+  t2.join();
 
   return 0;
 }

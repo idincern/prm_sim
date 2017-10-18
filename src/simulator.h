@@ -8,7 +8,10 @@
 #ifndef SIMULATOR_H
 #define SIMULATOR_H
 
+#include <opencv2/opencv.hpp>
+#include <atomic>
 #include <image_transport/image_transport.h>
+
 #include "ros/ros.h"
 #include "types.h"
 #include "globalmap.h"
@@ -25,6 +28,9 @@ public:
    */
   Simulator(ros::NodeHandle nh, TWorldInfoBuffer &buffer);
 
+  //Does the prm stuff!
+  void prmThread(void);
+
 private:
   ros::NodeHandle nh_;                      /*!< The handle of the ros node using this class */
   TWorldInfoBuffer &buffer_;                /*!< A shared global structure to update with world information */
@@ -36,6 +42,9 @@ private:
 
   GlobalMap gmap_;
 
+  //TODO: Do these need to be atomic?
+  //TODO: These could be internal to the thread....
+  TGlobalOrd currentGoal_;  /*!< Current goal to be moving towards */
   //condition var to wait on new goals
 
 

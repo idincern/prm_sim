@@ -29,23 +29,34 @@ WorldRetrieve::WorldRetrieve(ros::NodeHandle nh, TWorldInfoBuffer &buffer):
   ogmap_ = it.subscribe("map_image/full", 1, &WorldRetrieve::ogMapCallBack, this);
 }
 
-void WorldRetrieve::heartbeatThread(void)
-{
+void WorldRetrieve::heartbeatThread(void){
   while(ros::ok()){
-    ROS_INFO("I am the watcher of worlds..."); // TODO: Better message/is this necessary?
-
+    //TODO: Necessary???
     //Display a heartbeat message every so often
-    std::this_thread::sleep_for (std::chrono::seconds(5));
+    ROS_INFO("thump thump...");
+    std::this_thread::sleep_for (std::chrono::seconds(20));
   }
 }
 
 //TODO: Should we sepearte the world buffer... both callbacks locking the buffer
 void WorldRetrieve::odomCallBack(const nav_msgs::OdometryConstPtr &msg){
+  static bool firstCallBack = true;
+  static geometry_msgs::Pose lastPose = msg->pose.pose;
   geometry_msgs::Pose pose = msg->pose.pose;
 
   buffer_.access.lock();
   buffer_.poseDeq.push_back(pose);
   buffer_.access.unlock();
+
+  //We don't want to spam the node with the same pose infromation
+  if(lastPose.position.x != pose.position.x
+     || lastPose.position.y != pose.position.y || firstCallBack)
+  {
+    ROS_INFO("Robot @ {%f, %f}", pose.position.x, pose.position.y);
+    lastPose = pose;
+    firstCallBack = false;
+  }
+
 }
 
 void WorldRetrieve::ogMapCallBack(const sensor_msgs::ImageConstPtr &msg){
@@ -55,7 +66,7 @@ void WorldRetrieve::ogMapCallBack(const sensor_msgs::ImageConstPtr &msg){
   try
   {
     if (enc::isColor(msg->encoding))
-      cvPtr = cv_bridge::toCvCopy(msg, enc::BGR8);
+      cvPtr = cv_bridge::toCvCopy(msg, enc::MONO8);
     else
       cvPtr = cv_bridge::toCvCopy(msg, enc::MONO8);
   }
