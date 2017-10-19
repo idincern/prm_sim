@@ -14,7 +14,7 @@
 #include <chrono>
 
 static const unsigned int MaxGraphDensity = 5;  /*!< The max amount of neighbours a vertex in the graph can have */
-static const double MaxDistance = 2.5;          /*!< The max distance between two verticies in the graph (2.5) */
+static const double MaxDistance = 1.5;            /*!< The max distance between two verticies in the graph (2.5) */
 static const double DefMapSize = 20.0; //TODO!!
 static const double DefBotDiameter = 0.2;
 static const double DefResolution = 0.1;
@@ -56,6 +56,16 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &space, TGlobalOrd start, TGlob
 
     //First check that both points are accessible within the current map...
     if(!lmap_.isAccessible(space, pStart) || !lmap_.isAccessible(space, pGoal)){
+
+      //TODO: TEST CODE
+      if(!lmap_.isAccessible(space, pStart))
+        std::cout << "Cant access start pixel: " << pStart << std::endl;
+
+      if(!lmap_.isAccessible(space, pGoal))
+        std::cout << "Cant access goal pixel: " << pGoal << std::endl;
+
+      std::cout << "Shit ain't accessible" << std::endl;
+
       return path; //if not, return empty path
     }
   }
@@ -101,7 +111,7 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &space, TGlobalOrd start, TGlob
   }
 
   //Connect all the newely generated nodes (verticies)
-  connectNodes(space, false);
+  connectNodes(space, true);
 
   //Find or add the start/goal verticies to/in our graph
   vStart = findOrAdd(start);
@@ -337,6 +347,11 @@ void GlobalMap::setRobotDiameter(double robotDiameter)
 
 void GlobalMap::setResolution(double resolution)
 {
-    lmap_.setResolution(resolution);
+  lmap_.setResolution(resolution);
 }
+
+//bool GlobalMap::ordinateAccessible(cv::Mat &space, TGlobalOrd ordinate)
+//{
+
+//}
 

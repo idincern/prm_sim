@@ -73,6 +73,8 @@ public:
 
   void setResolution(double resolution);
 
+  bool ordinateAccessible(cv::Mat &space, TGlobalOrd ordinate);
+
 private:
   Graph graph_;                             /*!< A graph representation of the roadmap network */
   LocalMap lmap_;                           /*!< An object for interacting with the ogMap provided to this object */

@@ -44,16 +44,22 @@ void WorldRetrieve::odomCallBack(const nav_msgs::OdometryConstPtr &msg){
   static geometry_msgs::Pose lastPose = msg->pose.pose;
   geometry_msgs::Pose pose = msg->pose.pose;
 
-  buffer_.access.lock();
-  buffer_.poseDeq.push_back(pose);
-  buffer_.access.unlock();
-
   //We don't want to spam the node with the same pose infromation
   if(lastPose.position.x != pose.position.x
      || lastPose.position.y != pose.position.y || firstCallBack)
   {
     ROS_INFO("Robot @ {%f, %f}", pose.position.x, pose.position.y);
     lastPose = pose;
+
+    buffer_.access.lock();
+    buffer_.poseDeq.push_back(pose);
+
+    if(buffer_.poseDeq.size() > 1){
+      buffer_.poseDeq.pop_front();
+    }
+
+    buffer_.access.unlock();
+
     firstCallBack = false;
   }
 
@@ -80,7 +86,7 @@ void WorldRetrieve::ogMapCallBack(const sensor_msgs::ImageConstPtr &msg){
 
   buffer_.ogMapDeq.push_back(cvPtr->image);
 
-  if(buffer_.ogMapDeq.size() > 2){
+  if(buffer_.ogMapDeq.size() > 1){
     buffer_.ogMapDeq.pop_front();
   }
 

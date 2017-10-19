@@ -87,7 +87,7 @@ void Simulator::prmThread() {
     }
 
     if(buffer_.poseDeq.size() > 0){
-      robotPos = buffer_.poseDeq.front();
+      robotPos = buffer_.poseDeq.back();
       buffer_.poseDeq.pop_front();
     }
     buffer_.access.unlock();
