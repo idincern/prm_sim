@@ -112,6 +112,9 @@ public:
    */
   void setResolution(double resolution);
 
+  //TODO:
+  double freeConfigSpace(cv::Mat &cspace);
+
 private:
   double resolution_;         /*!< Will specify the amount of pixels per meter */
   unsigned int pixelMapSize_; /*!< The total mapSize (square maps/images only) in pixels */

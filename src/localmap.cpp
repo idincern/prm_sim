@@ -66,6 +66,21 @@ void LocalMap::expandConfigSpace(cv::Mat &space, double robotDiameter){
   }
 }
 
+double LocalMap::freeConfigSpace(cv::Mat &cspace){
+  //Dumb in that it simply calculates the amount of free pixels currently seen
+  unsigned int freePixels(0);
+
+  for(int i = 0; i < cspace.rows; i++){
+    for(int j = 0; j < cspace.cols; j++){
+      if(cspace.at<uchar>(j,i) == 255){
+        freePixels++;
+      }
+    }
+  }
+
+  return freePixels * resolution_;
+}
+
 void LocalMap::overlayPRM(cv::Mat &space, std::vector<std::pair<cv::Point, cv::Point>> prm){
   for(auto const &neighbours: prm){
     //Draw circles to represent points

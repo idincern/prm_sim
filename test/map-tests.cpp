@@ -613,6 +613,21 @@ TEST(Graph, MaxNeighbours){
   ASSERT_FALSE(g.addEdge(0, 4, 1.0));
 }
 
+TEST(Graph, AlreadyNeighbours){
+  Graph g(5);
+
+  g.addVertex(0);
+  g.addVertex(1);
+  g.addVertex(2);
+
+  ASSERT_TRUE(g.addEdge(0, 1, 1.0));
+  ASSERT_FALSE(g.addEdge(0, 1, 2.0));
+  ASSERT_FALSE(g.addEdge(1, 0, 3.0));
+
+  ASSERT_TRUE(g.addEdge(0, 2, 1.0));
+  ASSERT_TRUE(g.addEdge(1, 2, 1.0));
+}
+
 TEST(Graph, RemoveVertex){
   Graph g(3);
 

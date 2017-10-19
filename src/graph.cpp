@@ -11,6 +11,7 @@
 */
 #include "graph.h"
 
+#include <functional>
 #include <algorithm>
 #include <limits>
 #include <string>
@@ -57,8 +58,16 @@ bool Graph::addEdge(const vertex v, const vertex u, const weight w)
     return false;
   }
 
-  //There is already an edge between these neighbours
-  container_.find(v)->second.find(edge(u,w));
+  //Check if there is already an edge between these neighbours
+  auto vEdges = container_.find(v)->second;
+  if(find_if(vEdges.begin(), vEdges.end(), [u](const edge &e){ return e.first == u;}) != vEdges.end()){
+    return false;
+  }
+
+  auto uEdges = container_.find(u)->second;
+  if(find_if(uEdges.begin(), uEdges.end(), [v](const edge &e){ return e.first == v;}) != uEdges.end()){
+    return false;
+  }
 
   container_.find(v)->second.insert(edge(u, w));
   container_.find(u)->second.insert(edge(v, w));
