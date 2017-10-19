@@ -27,12 +27,11 @@ public:
    *
    *  @param mapSize The size of the OgMap in meters (square maps only).
    *  @param res The resolution of the OgMaps provided to this object.
-   *  @param robotDiameter Used in computing the effective configuration space.
    *
    *  @note This will set the reference position to 0,0 by default. To change this,
    *        call setReference().
    */
-  GlobalMap(double mapSize, double mapRes, double robotDiameter);
+  GlobalMap(double mapSize, double mapRes);
 
   /*! @brief Builds a prm network between a start and end ordinate.
    *
@@ -43,7 +42,7 @@ public:
    *                              and goal. This will be empty if no path was
    *                              discovered.
    */
-  std::vector<TGlobalOrd> build(cv::Mat &space, TGlobalOrd start, TGlobalOrd goal);
+  std::vector<TGlobalOrd> build(cv::Mat &cspace, TGlobalOrd start, TGlobalOrd goal);
 
   /*! @brief Overlays the current state of the PRM unto a colour OgMap.
    *
@@ -68,12 +67,11 @@ public:
    */
   void setMapSize(double mapSize);
 
-  //TODO
-  void setRobotDiameter(double robotDiameter);
-
   void setResolution(double resolution);
 
-  bool ordinateAccessible(cv::Mat &space, TGlobalOrd ordinate);
+  bool ordinateAccessible(cv::Mat &cspace, TGlobalOrd ordinate);
+
+  void expandConfigSpace(cv::Mat &space, double robotDiameter);
 
 private:
   Graph graph_;                             /*!< A graph representation of the roadmap network */
@@ -82,7 +80,6 @@ private:
   vertex nextVertexId_;                     /*!< Used for generating unique vertex ids for coordiantes... TODO: make atomic?? */
   TGlobalOrd reference_;                    /*!< Reference ordinate for the local map, this is usually the robot position */
   double mapSize_;                          /*!< The mapSize in m */
-  double robotDiameter_;                    /*!< The diameter of the robot in m */
 
   /*! @brief Optimises a path between two points in a config space.
    *

@@ -16,7 +16,6 @@
 static const unsigned int MaxGraphDensity = 5;  /*!< The max amount of neighbours a vertex in the graph can have */
 static const double MaxDistance = 1.5;            /*!< The max distance between two verticies in the graph (2.5) */
 static const double DefMapSize = 20.0; //TODO!!
-static const double DefBotDiameter = 0.2;
 static const double DefResolution = 0.1;
 
 GlobalMap::GlobalMap():
@@ -26,51 +25,29 @@ GlobalMap::GlobalMap():
   nextVertexId_ = 0;
   reference_.x = 0;
   reference_.y = 0;
-  robotDiameter_ = DefBotDiameter;
 }
 
-
-GlobalMap::GlobalMap(double mapSize, double mapRes, double robotDiameter):
+GlobalMap::GlobalMap(double mapSize, double mapRes):
   graph_(Graph(MaxGraphDensity)), lmap_(LocalMap(mapSize, mapRes))
 {
   mapSize_ = mapSize;
   nextVertexId_ = 0;
   reference_.x = 0;
   reference_.y = 0;
-  robotDiameter_ = robotDiameter;
 }
 
-std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &space, TGlobalOrd start, TGlobalOrd goal)
+std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &cspace, TGlobalOrd start, TGlobalOrd goal)
 {
   vertex vStart, vGoal;     //Vertex representation of the global ords
   cv::Point pStart, pGoal;  //Pixel point representation of the ordinates
   std::vector<TGlobalOrd> path;
 
-  //Expand config space based on the robot's diameter
-  lmap_.expandConfigSpace(space, robotDiameter_);
-
-  //If either does not exist as vertcies in graph already, we must perform some setup.
-  if(!existsAsVertex(start) || !existsAsVertex(goal)){
-    pStart = lmap_.convertToPoint(reference_, start);
-    pGoal = lmap_.convertToPoint(reference_, goal);
-
-    //First check that both points are accessible within the current map...
-    if(!lmap_.isAccessible(space, pStart) || !lmap_.isAccessible(space, pGoal)){
-
-      //TODO: TEST CODE
-      if(!lmap_.isAccessible(space, pStart))
-        std::cout << "Cant access start pixel: " << pStart << std::endl;
-
-      if(!lmap_.isAccessible(space, pGoal))
-        std::cout << "Cant access goal pixel: " << pGoal << std::endl;
-
-      std::cout << "Shit ain't accessible" << std::endl;
-
-      return path; //if not, return empty path
-    }
+  //Check that both ordinates are accessible
+  if(!ordinateAccessible(cspace, start) || !ordinateAccessible(cspace, goal)){
+    return path;
   }
 
-  //Both are in the graph, perhaps there is already a path?
+  //If both in the graph, perhaps there is already a path?
   if(existsAsVertex(start) && existsAsVertex(goal))
   {
     lookup(start, vStart);
@@ -78,14 +55,17 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &space, TGlobalOrd start, TGlob
 
     std::vector<vertex> vPath = graph_.shortestPath(vStart, vGoal);
     if(vPath.size() > 0){
-      return optimisePath(space, toOrdPath(vPath));
+      return optimisePath(cspace, toOrdPath(vPath));
     }
   }
+
+  pStart = lmap_.convertToPoint(reference_, start);
+  pGoal = lmap_.convertToPoint(reference_, goal);
 
   unsigned int nodeCnt(0);
 
   //TODO: Dynamically work out nodes?
-  while(nodeCnt < 200){
+  while(nodeCnt < (mapSize_ * mapSize_)){
     TGlobalOrd randomOrd;
     //Generate random ords within the map space...
     std::default_random_engine generator(std::chrono::duration_cast<std::chrono::nanoseconds>
@@ -101,7 +81,7 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &space, TGlobalOrd start, TGlob
     cv::Point pRand = lmap_.convertToPoint(reference_, randomOrd);
 
     //Only add ords that are accessible
-    if(!lmap_.isAccessible(space, pRand)){
+    if(!lmap_.isAccessible(cspace, pRand)){
       continue;
     }
 
@@ -111,20 +91,20 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &space, TGlobalOrd start, TGlob
   }
 
   //Connect all the newely generated nodes (verticies)
-  connectNodes(space, true);
+  connectNodes(cspace, false);
 
   //Find or add the start/goal verticies to/in our graph
   vStart = findOrAdd(start);
   vGoal = findOrAdd(goal);
 
   //Connect to the PRM
-  connectNode(space, vStart, false);
-  connectNode(space, vGoal, false);
+  connectNode(cspace, vStart, false);
+  connectNode(cspace, vGoal, false);
 
   //Find a path and optimise the graph.
   std::vector<vertex> vPath = graph_.shortestPath(vStart, vGoal);
   if(vPath.size() > 0){
-    return optimisePath(space, toOrdPath(vPath));
+    return optimisePath(cspace, toOrdPath(vPath));
   }
 
   return path;
@@ -305,7 +285,7 @@ vertex GlobalMap::findOrAdd(TGlobalOrd ordinate){
 bool GlobalMap::existsAsVertex(TGlobalOrd ord){
   for(auto &v: network_){
     if(v.second.x == ord.x && v.second.y == ord.y){
-      return true;
+      return true; //TODO: USE STRUCT == instead?
     }
   }
 
@@ -340,18 +320,19 @@ void GlobalMap::setMapSize(double mapSize)
   lmap_.setMapSize(mapSize);
 }
 
-void GlobalMap::setRobotDiameter(double robotDiameter)
-{
-    robotDiameter_ = robotDiameter;
-}
-
 void GlobalMap::setResolution(double resolution)
 {
   lmap_.setResolution(resolution);
 }
 
-//bool GlobalMap::ordinateAccessible(cv::Mat &space, TGlobalOrd ordinate)
-//{
+bool GlobalMap::ordinateAccessible(cv::Mat &cspace, TGlobalOrd ordinate)
+{
+  return existsAsVertex(ordinate) ||
+      lmap_.isAccessible(cspace, lmap_.convertToPoint(reference_, ordinate));
+}
 
-//}
+void GlobalMap::expandConfigSpace(cv::Mat &space, double robotDiameter)
+{
+  lmap_.expandConfigSpace(space, robotDiameter);
+}
 

@@ -41,6 +41,7 @@ private:
   ros::Publisher path_;                     /*!< Publishes the path between robot and goal on /path */
 
   GlobalMap gmap_;
+  double robotDiameter_; //TODO
 
   //TODO: Do these need to be atomic?
   //TODO: These could be internal to the thread....

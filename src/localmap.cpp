@@ -62,8 +62,6 @@ void LocalMap::expandConfigSpace(cv::Mat &space, double robotDiameter){
   for(auto const &p: pointsToExpand){
     unsigned int inten = space.at<uchar>(p);
 
-    //TODO: Even though this takes a radius, we double it (diameter) to ensure
-    //there is some space between robot and obstacle
     cv::circle(space, p, pixDiameter / 2, (inten, inten, inten), -1);
   }
 }

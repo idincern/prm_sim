@@ -42,15 +42,14 @@ Simulator::Simulator(ros::NodeHandle nh, TWorldInfoBuffer &buffer):
   ros::NodeHandle pn("~");
   double mapSize;
   double mapResolution;
-  double robotDiameter;
   pn.param<double>("map_size", mapSize, 20.0);
   pn.param<double>("resolution", mapResolution, 0.1);
-  pn.param<double>("robot_diameter", robotDiameter, 0.2);
+  pn.param<double>("robot_diameter", robotDiameter_, 0.2);
 
   ROS_INFO("Init with: map_size={%f} resolution={%f} robot_diameter={%f}",
-           mapSize, mapResolution, robotDiameter);
+           mapSize, mapResolution, robotDiameter_);
 
-  gmap_ = GlobalMap(mapSize, mapResolution, robotDiameter);
+  gmap_ = GlobalMap(mapSize, mapResolution);
 }
 
 void Simulator::prmThread() {
@@ -58,7 +57,7 @@ void Simulator::prmThread() {
   geometry_msgs::Pose robotPos;
 
   //We must wait until information about the world has been recieved
-  //so that we can begin
+  //so that we can begin building the prm
   while(ros::ok()){
     int mapSz, poseSz;
     buffer_.access.lock();
@@ -107,18 +106,32 @@ void Simulator::prmThread() {
     cv::Mat colourMap;
     cv::cvtColor(ogMap, colourMap, CV_GRAY2BGR);
 
-    ROS_INFO("Starting build: {%f, %f} to {%f, %f}",
+    //Expand the configuration space
+    gmap_.expandConfigSpace(ogMap, robotDiameter_);
+
+    ROS_INFO("Starting build: {%1f, %1f} to {%1f, %1f}",
              robotOrd.x, robotOrd.y, goal.x, goal.y);
 
-    int cnt(1);
-    std::vector<TGlobalOrd> path = gmap_.build(ogMap, robotOrd, goal);
+    if(!gmap_.ordinateAccessible(ogMap, robotOrd)){
+      ROS_ERROR(" Robot ordinates {%1f, %1f} are not accessible",
+                robotOrd.x, robotOrd.y);
+      continue;
+    }
+
+    if(!gmap_.ordinateAccessible(ogMap, goal)){
+      ROS_ERROR(" Goal ordinates {%1f, %1f} are not accessible",
+                goal.x, goal.y);
+      continue;
+    }
+
+    int cnt = 0;
+    std::vector<TGlobalOrd> path;
     while(path.size() == 0){
-      cnt++;
-      ROS_INFO("Path find failed... Trying again. Attempt: %d", cnt);
+      ROS_INFO("  Building nodes...");
       path = gmap_.build(ogMap, robotOrd, goal);
 
-      if(cnt > 2){
-        ROS_INFO("Cannot reach goal.");
+      if(cnt++ > 4){
+        ROS_INFO("  Finding a path was more difficult than expected...");
         break;
       }
     }
@@ -153,6 +166,7 @@ bool Simulator::requestGoal(prm_sim::RequestGoal::Request &req, prm_sim::Request
   ROS_INFO("Goal request: x=%ld, y=%ld", (long int)req.x, (long int)req.y);
 
   //TODO: Check if Goal is within map space??
+  //TODO: GOAL MUST BE FLOATING POINT
   currentGoal_.x = req.x;
   currentGoal_.y = req.y;
 

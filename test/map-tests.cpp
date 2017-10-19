@@ -13,6 +13,7 @@
 #include <vector>
 
 #define SHOW_PRM true
+#define MAX_TRIES 3   //TODO: Through command line
 
 /* Various opencv images for testing */
 
@@ -314,14 +315,19 @@ TEST(PrmGen, SimplePath){
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
   TGlobalOrd robot{10, 10}, goal{15, 15}, start{5,5};
-  GlobalMap g(20.0, 0.1, 0.2);
+  GlobalMap g(20.0, 0.1);
+
   g.setReference(robot);
+  g.expandConfigSpace(map, 0.2);
 
-  std::vector<TGlobalOrd> path = g.build(map, robot, goal);
+  std::vector<TGlobalOrd> path;
 
-  if(path.size() == 0){
-    std::cout << "Attempting path build again..." << std::endl;
-    path = g.build(map, start, goal);
+  int cnt(0);
+  while(path.size() <= 0){
+    path = g.build(map, robot, goal);
+
+    if(cnt++ > MAX_TRIES)
+      break;
   }
 
   if(SHOW_PRM){
@@ -340,15 +346,20 @@ TEST(PrmGen, ComplicatedPath){
   cv::Mat colourMap;
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
-  GlobalMap g(20.0, 0.1, 0.2);
   TGlobalOrd robot{10, 10}, start{1, 1}, goal{10, 19};
+  GlobalMap g(20.0, 0.1);
+
   g.setReference(robot);
+  g.expandConfigSpace(map, 0.2);
 
-  std::vector<TGlobalOrd> path = g.build(map, start, goal);
+  std::vector<TGlobalOrd> path;
 
-  if(path.size() == 0){
-    std::cout << "Attempting path build again..." << std::endl;
+  int cnt(0);
+  while(path.size() <= 0){
     path = g.build(map, start, goal);
+
+    if(cnt++ > MAX_TRIES)
+      break;
   }
 
   if(SHOW_PRM){
@@ -365,15 +376,20 @@ TEST(PrmGen, Hallway){
   cv::Mat colourMap;
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
-  GlobalMap g(20.0, 0.1, 0.2);
   TGlobalOrd robot{10, 10}, start{4, 2}, goal{19, 14};
+  GlobalMap g(20.0, 0.1);
+
   g.setReference(robot);
+  g.expandConfigSpace(map, 0.2);
 
-  std::vector<TGlobalOrd> path = g.build(map, start, goal);
+  std::vector<TGlobalOrd> path;
 
-  if(path.size() == 0){
-    std::cout << "Attempting path build again..." << std::endl;
+  int cnt(0);
+  while(path.size() <= 0){
     path = g.build(map, start, goal);
+
+    if(cnt++ > MAX_TRIES)
+      break;
   }
 
   if(SHOW_PRM){
@@ -390,15 +406,20 @@ TEST(PrmGen, Pole){
   cv::Mat colourMap;
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
-  GlobalMap g(20.0, 0.1, 0.2);
   TGlobalOrd robot{10, 10}, start{1, 1}, goal{19, 19};
+  GlobalMap g(20.0, 0.1);
+
   g.setReference(robot);
+  g.expandConfigSpace(map, 0.2);
 
-  std::vector<TGlobalOrd> path = g.build(map, start, goal);
+  std::vector<TGlobalOrd> path;
 
-  if(path.size() == 0){
-    std::cout << "Attempting path build again..." << std::endl;
+  int cnt(0);
+  while(path.size() <= 0){
     path = g.build(map, start, goal);
+
+    if(cnt++ > MAX_TRIES)
+      break;
   }
 
   if(SHOW_PRM){
@@ -416,9 +437,10 @@ TEST(PrmGen, NoPath){
   cv::Mat colourMap;
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
-  GlobalMap g(20.0, 0.1, 0.2);
+  GlobalMap g(20.0, 0.1);
   TGlobalOrd robot{10, 10}, start{1, 5}, goal{10, 19};
   g.setReference(robot);
+  g.expandConfigSpace(map, 0.2);
 
   std::vector<TGlobalOrd> path = g.build(map, start, goal);
 
