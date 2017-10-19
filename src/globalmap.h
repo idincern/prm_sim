@@ -73,6 +73,9 @@ public:
 
   void expandConfigSpace(cv::Mat &space, double robotDiameter);
 
+
+  std::vector<TGlobalOrd> query(cv::Mat &cspace, TGlobalOrd start, TGlobalOrd goal);
+
 private:
   Graph graph_;                             /*!< A graph representation of the roadmap network */
   LocalMap lmap_;                           /*!< An object for interacting with the ogMap provided to this object */
@@ -166,6 +169,8 @@ private:
    *  @return vertex The next unique vertex id.
    */
   vertex nextVertexId();
+
+  unsigned int neighboursInDist(cv::Mat &cspace, TGlobalOrd nodeOrd, double dist);
 };
 
 #endif // GLOBALMAP_H

@@ -28,7 +28,12 @@
 namespace enc = sensor_msgs::image_encodings;
 
 static std::mutex              goalAccess;      /*!< TODO */
+static std::mutex              pathBuilding;
+static std::mutex              construction;
+
 static std::condition_variable newGoal;      /*!< TODO */
+static std::condition_variable buildGoal;
+static std::condition_variable constructionComplete;
 
 Simulator::Simulator(ros::NodeHandle nh, TWorldInfoBuffer &buffer):
   buffer_(buffer), nh_(nh), it_(nh)
@@ -46,11 +51,52 @@ Simulator::Simulator(ros::NodeHandle nh, TWorldInfoBuffer &buffer):
   pn.param<double>("resolution", mapResolution, 0.1);
   pn.param<double>("robot_diameter", robotDiameter_, 0.2);
 
-  ROS_INFO("Init with: map_size={%f} resolution={%f} robot_diameter={%f}",
+  ROS_INFO("Init with: map_size={%.1f} resolution={%.1f} robot_diameter={%.1f}",
            mapSize, mapResolution, robotDiameter_);
 
   gmap_ = GlobalMap(mapSize, mapResolution);
 }
+
+//void Simulator::queryThread(){
+//  //We must wait until information about the world has been recieved
+//  //so that we can begin building the prm
+//  while(ros::ok()){
+//    int mapSz, poseSz;
+//    buffer_.access.lock();
+//    mapSz = buffer_.ogMapDeq.size();
+//    poseSz = buffer_.poseDeq.size();
+//    buffer_.access.unlock();
+
+//    if(mapSz > 0 && poseSz > 0){
+//      break;
+//    }
+//  }
+
+//  ROS_INFO("Ready to recieve requests...");
+//  std::unique_lock<std::mutex> lock1(goalAccess);
+//  std::unique_lock<std::mutex> lock2(construction);
+
+//  while(ros::ok()){
+//    newGoal.wait(lock1);
+//    TGlobalOrd goal = currentGoal_;
+
+//    buildGoal.notify_one();
+
+//    std::vector<TGlobalOrd> path;
+
+//    int cnt(0);
+//    while(++cnt < 5){
+//      constructionComplete.wait(lock2);
+
+//      path = gmap_.query(cspace, stat)
+
+//    }
+
+
+
+//  }
+
+//}
 
 void Simulator::prmThread() {
   cv::Mat ogMap;
@@ -92,7 +138,7 @@ void Simulator::prmThread() {
     buffer_.access.unlock();
 
     //Update the reference for the localMap
-    ROS_INFO("Setting reference: {%f, %f}", robotPos.position.x, robotPos.position.y);
+    ROS_INFO("Setting reference: {%.1f, %.1f}", robotPos.position.x, robotPos.position.y);
     TGlobalOrd robotOrd = {robotPos.position.x, robotPos.position.y};
     gmap_.setReference(robotOrd);
 
@@ -109,17 +155,17 @@ void Simulator::prmThread() {
     //Expand the configuration space
     gmap_.expandConfigSpace(ogMap, robotDiameter_);
 
-    ROS_INFO("Starting build: {%1f, %1f} to {%1f, %1f}",
+    ROS_INFO("Starting build: {%.1f, %.1f} to {%.1f, %.1f}",
              robotOrd.x, robotOrd.y, goal.x, goal.y);
 
     if(!gmap_.ordinateAccessible(ogMap, robotOrd)){
-      ROS_ERROR(" Robot ordinates {%1f, %1f} are not accessible",
+      ROS_ERROR(" Robot ordinates {%.1f, %.1f} are not accessible",
                 robotOrd.x, robotOrd.y);
       continue;
     }
 
     if(!gmap_.ordinateAccessible(ogMap, goal)){
-      ROS_ERROR(" Goal ordinates {%1f, %1f} are not accessible",
+      ROS_ERROR(" Goal ordinates {%.1f, %.1f} are not accessible",
                 goal.x, goal.y);
       continue;
     }
@@ -163,7 +209,7 @@ void Simulator::prmThread() {
 
 bool Simulator::requestGoal(prm_sim::RequestGoal::Request &req, prm_sim::RequestGoal::Response &res)
 {
-  ROS_INFO("Goal request: x=%ld, y=%ld", (long int)req.x, (long int)req.y);
+  ROS_INFO("Goal request: x=%.1f, y=%.1f", (double)req.x, (double)req.y);
 
   //TODO: Check if Goal is within map space??
   //TODO: GOAL MUST BE FLOATING POINT

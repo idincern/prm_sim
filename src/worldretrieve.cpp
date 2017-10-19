@@ -34,7 +34,7 @@ void WorldRetrieve::heartbeatThread(void){
     //TODO: Necessary???
     //Display a heartbeat message every so often
     ROS_INFO("thump thump...");
-    std::this_thread::sleep_for (std::chrono::seconds(20));
+    std::this_thread::sleep_for (std::chrono::minutes(1));
   }
 }
 
@@ -48,7 +48,7 @@ void WorldRetrieve::odomCallBack(const nav_msgs::OdometryConstPtr &msg){
   if(lastPose.position.x != pose.position.x
      || lastPose.position.y != pose.position.y || firstCallBack)
   {
-    ROS_INFO("Robot @ {%f, %f}", pose.position.x, pose.position.y);
+    ROS_INFO("Robot @ {%.1f, %.1f}", pose.position.x, pose.position.y);
     lastPose = pose;
 
     buffer_.access.lock();

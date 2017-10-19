@@ -14,14 +14,14 @@
 #include <chrono>
 
 static const unsigned int MaxGraphDensity = 5;  /*!< The max amount of neighbours a vertex in the graph can have */
-static const double MaxDistance = 1.5;            /*!< The max distance between two verticies in the graph (2.5) */
-static const double DefMapSize = 20.0; //TODO!!
-static const double DefResolution = 0.1;
+static const double MaxDistance = 1.5;          /*!< The max distance between two verticies in the graph (2.5) */
+static const double DefaultMapSize = 20.0;      /*!< The default ogmap size is 20x20m */
+static const double DefaultfResolution = 0.1;   /*!< The default ogmap resolution is 0.1 */
 
 GlobalMap::GlobalMap():
-  graph_(Graph(MaxGraphDensity)), lmap_(LocalMap(DefMapSize, DefResolution))
+  graph_(Graph(MaxGraphDensity)), lmap_(LocalMap(DefaultMapSize, DefaultfResolution))
 {
-  mapSize_ = DefMapSize;   //Default
+  mapSize_ = DefaultMapSize;   //TODO: This should be queried from local map
   nextVertexId_ = 0;
   reference_.x = 0;
   reference_.y = 0;
@@ -39,7 +39,6 @@ GlobalMap::GlobalMap(double mapSize, double mapRes):
 std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &cspace, TGlobalOrd start, TGlobalOrd goal)
 {
   vertex vStart, vGoal;     //Vertex representation of the global ords
-  cv::Point pStart, pGoal;  //Pixel point representation of the ordinates
   std::vector<TGlobalOrd> path;
 
   //Check that both ordinates are accessible
@@ -59,13 +58,8 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &cspace, TGlobalOrd start, TGlo
     }
   }
 
-  pStart = lmap_.convertToPoint(reference_, start);
-  pGoal = lmap_.convertToPoint(reference_, goal);
-
-  unsigned int nodeCnt(0);
-
-  //TODO: Dynamically work out nodes?
-  while(nodeCnt < (mapSize_ * mapSize_)){
+  unsigned int attempts(0);
+  while(attempts < (mapSize_ * mapSize_)){
     TGlobalOrd randomOrd;
     //Generate random ords within the map space...
     std::default_random_engine generator(std::chrono::duration_cast<std::chrono::nanoseconds>
@@ -85,13 +79,13 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &cspace, TGlobalOrd start, TGlo
       continue;
     }
 
-    //See if vertex exists in graph already otherwise, attempt to connect to other verticies
-    vertex vRand = findOrAdd(randomOrd);
-    nodeCnt++;
+    //See if vertex exists in graph, if not - add!
+    findOrAdd(randomOrd);
+    attempts++;
   }
 
   //Connect all the newely generated nodes (verticies)
-  connectNodes(cspace, false);
+  connectNodes(cspace, true);
 
   //Find or add the start/goal verticies to/in our graph
   vStart = findOrAdd(start);
@@ -103,11 +97,31 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &cspace, TGlobalOrd start, TGlo
 
   //Find a path and optimise the graph.
   std::vector<vertex> vPath = graph_.shortestPath(vStart, vGoal);
+
   if(vPath.size() > 0){
     return optimisePath(cspace, toOrdPath(vPath));
   }
 
   return path;
+}
+
+std::vector<TGlobalOrd> GlobalMap::query(cv::Mat &cspace, TGlobalOrd start, TGlobalOrd goal){
+  //This function connects the start and end goal to the graph
+  //and attempts to find a connection through the prm
+  vertex vStart = findOrAdd(start);
+  vertex vGoal = findOrAdd(goal);
+
+  connectNode(cspace, vStart, true);
+  connectNode(cspace, vStart, true);
+
+  //Find a path and optimise the graph.
+  std::vector<vertex> vPath = graph_.shortestPath(vStart, vGoal);
+  if(vPath.size() > 0){
+    return optimisePath(cspace, toOrdPath(vPath));
+  }
+
+  //TODO: THIS IS WIP
+  return std::vector<TGlobalOrd>();
 }
 
 void GlobalMap::showOverlay(cv::Mat &space, std::vector<TGlobalOrd> path){
@@ -218,6 +232,12 @@ double distance(TGlobalOrd p1, TGlobalOrd p2){
 void GlobalMap::connectNode(cv::Mat &cspace, vertex node, bool imposeMaxDist){
   TGlobalOrd nodeOrd = network_[node];
 
+  if(!graph_.canConnect(node)){
+    //No point trying to connect a node that can't
+    //be connected to.
+    return;
+  }
+
   //Find the neighbours that are closest to the current node
   std::vector<TGlobalOrd> candidates;
   for(auto const &candidate: network_){
@@ -239,7 +259,6 @@ void GlobalMap::connectNode(cv::Mat &cspace, vertex node, bool imposeMaxDist){
 
   //For each of our neighbouring candidates, determine
   //if we can connect to them in the cspace
-  int cnt(0);
   for(auto const &neighbour: candidates){
     vertex vNeighbour;
     if(!lookup(neighbour, vNeighbour)){
@@ -250,20 +269,57 @@ void GlobalMap::connectNode(cv::Mat &cspace, vertex node, bool imposeMaxDist){
     cv::Point pCurrent = lmap_.convertToPoint(reference_, nodeOrd);
     cv::Point pN = lmap_.convertToPoint(reference_, neighbour);
     if(lmap_.canConnect(cspace,pCurrent,pN)){
-      if(graph_.addEdge(node, vNeighbour, distance(nodeOrd, neighbour))){
-        cnt++;
-      }
+      graph_.addEdge(node, vNeighbour, distance(nodeOrd, neighbour));
     }
 
-    if(cnt > MaxGraphDensity){
-      break; //The current node has reached its max capacity
+    if(!graph_.canConnect(node)){
+      break; //We've reached the capacity for this node
     }
   }
 }
 
-void GlobalMap::connectNodes(cv::Mat &m, bool imposeMaxDist){
+unsigned int GlobalMap::neighboursInDist(cv::Mat &cspace, TGlobalOrd nodeOrd, double dist){
+  unsigned int candidates(0);
+
+  for(auto const &candidate: network_){
+    //Can we connect to candidate
+    if(graph_.canConnect(candidate.first)){
+      //Is candidate within some heuristic pre-defined distance
+      if(distance(nodeOrd, candidate.second) < dist){
+        //Can we physically connect to the candidate
+        cv::Point pCurrent = lmap_.convertToPoint(reference_, nodeOrd);
+        cv::Point pN = lmap_.convertToPoint(reference_, candidate.second);
+
+        if(lmap_.canConnect(cspace,pCurrent,pN)){
+          candidates++;
+        }
+      }
+    }
+  }
+
+  return candidates;
+}
+
+
+void GlobalMap::connectNodes(cv::Mat &cspace, bool imposeMaxDist){
+  //Prioritise nodes by number of neighbours in vicinity
+  std::vector<std::pair<vertex, unsigned int>> nodeOrder;
   for(auto const &entry: network_){
-    connectNode(m, entry.first, imposeMaxDist);
+    if(graph_.canConnect(entry.first)){
+      nodeOrder.push_back(
+            std::make_pair(entry.first, neighboursInDist(cspace, entry.second, MaxDistance)));
+    }
+  }
+
+  //Prioritise connection order by nodes who have the least amount of available connections
+  //within some pre-determined distance
+  std::sort(nodeOrder.begin(), nodeOrder.end(),
+            [](const std::pair<vertex, unsigned int> &lhs, std::pair<vertex, unsigned int> &rhs){
+    return lhs.second < rhs.second;
+  });
+
+  for(auto const n: nodeOrder){
+    connectNode(cspace, n.first, imposeMaxDist);
   }
 }
 
