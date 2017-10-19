@@ -50,6 +50,9 @@ private:
 
 
   bool requestGoal(prm_sim::RequestGoal::Request &req, prm_sim::RequestGoal::Response &res);
+  void consumeWorldInformation(cv::Mat &ogMap, geometry_msgs::Pose &robotPos);
+  void sendOverlay(cv::Mat &colourMap, std::vector<TGlobalOrd> path);
+  void sendPath(std::vector<TGlobalOrd> path);
 };
 
 #endif // SIMULATOR_H

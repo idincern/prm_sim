@@ -38,13 +38,12 @@ void WorldRetrieve::heartbeatThread(void){
   }
 }
 
-//TODO: Should we sepearte the world buffer... both callbacks locking the buffer
 void WorldRetrieve::odomCallBack(const nav_msgs::OdometryConstPtr &msg){
   static bool firstCallBack = true;
   static geometry_msgs::Pose lastPose = msg->pose.pose;
   geometry_msgs::Pose pose = msg->pose.pose;
 
-  //We don't want to spam the node with the same pose infromation
+  //We don't want to spam the buffer with the same pose infromation
   if(lastPose.position.x != pose.position.x
      || lastPose.position.y != pose.position.y || firstCallBack)
   {
@@ -54,6 +53,8 @@ void WorldRetrieve::odomCallBack(const nav_msgs::OdometryConstPtr &msg){
     buffer_.access.lock();
     buffer_.poseDeq.push_back(pose);
 
+    //To keep both the ogmap and pose buffer in lock-step, we remove
+    //old data from the queue
     if(buffer_.poseDeq.size() > 1){
       buffer_.poseDeq.pop_front();
     }
@@ -68,13 +69,16 @@ void WorldRetrieve::odomCallBack(const nav_msgs::OdometryConstPtr &msg){
 void WorldRetrieve::ogMapCallBack(const sensor_msgs::ImageConstPtr &msg){
   cv_bridge::CvImagePtr cvPtr;
 
-  //TODO: Enforce grey images on queue
   try
   {
-    if (enc::isColor(msg->encoding))
+    if (enc::isColor(msg->encoding)){
+      //Enforce grey images on queue
+      ROS_ERROR("Expected greyscale image...");
       cvPtr = cv_bridge::toCvCopy(msg, enc::MONO8);
-    else
+    }
+    else {
       cvPtr = cv_bridge::toCvCopy(msg, enc::MONO8);
+    }
   }
   catch (cv_bridge::Exception& e)
   {
@@ -86,6 +90,8 @@ void WorldRetrieve::ogMapCallBack(const sensor_msgs::ImageConstPtr &msg){
 
   buffer_.ogMapDeq.push_back(cvPtr->image);
 
+  //To keep both the ogmap and pose buffer in lock-step, we remove
+  //old data from the queue
   if(buffer_.ogMapDeq.size() > 1){
     buffer_.ogMapDeq.pop_front();
   }

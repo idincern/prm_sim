@@ -98,6 +98,8 @@ Simulator::Simulator(ros::NodeHandle nh, TWorldInfoBuffer &buffer):
 
 //}
 
+
+
 void Simulator::prmThread() {
   cv::Mat ogMap;
   geometry_msgs::Pose robotPos;
@@ -124,27 +126,19 @@ void Simulator::prmThread() {
     newGoal.wait(lock);
     TGlobalOrd goal = currentGoal_;
 
-    //Get information about the world if available
-    buffer_.access.lock();
-    if(buffer_.ogMapDeq.size() > 0){
-      ogMap = buffer_.ogMapDeq.front();
-      buffer_.ogMapDeq.pop_front();
-    }
-
-    if(buffer_.poseDeq.size() > 0){
-      robotPos = buffer_.poseDeq.back();
-      buffer_.poseDeq.pop_front();
-    }
-    buffer_.access.unlock();
+    //Recieve new information from the world buffer
+    consumeWorldInformation(ogMap, robotPos);
 
     //Update the reference for the localMap
-    ROS_INFO("Setting reference: {%.1f, %.1f}", robotPos.position.x, robotPos.position.y);
     TGlobalOrd robotOrd = {robotPos.position.x, robotPos.position.y};
+    ROS_INFO("Setting reference: {%.1f, %.1f}", robotOrd.x, robotOrd.y);
     gmap_.setReference(robotOrd);
 
     if(ogMap.empty()){
-      //Something has gone wrong during image transmission, continue
-      ROS_ERROR("Empty OgMap.");
+      //Something has gone wrong during image transmission,
+      //skip execution for this goal and hope new data has arived
+      //on the next go around
+      ROS_ERROR("Empty OgMap");
       continue;
     }
 
@@ -155,9 +149,8 @@ void Simulator::prmThread() {
     //Expand the configuration space
     gmap_.expandConfigSpace(ogMap, robotDiameter_);
 
-    ROS_INFO("Starting build: {%.1f, %.1f} to {%.1f, %.1f}",
-             robotOrd.x, robotOrd.y, goal.x, goal.y);
 
+    //Validate both ordinates
     if(!gmap_.ordinateAccessible(ogMap, robotOrd)){
       ROS_ERROR(" Robot ordinates {%.1f, %.1f} are not accessible",
                 robotOrd.x, robotOrd.y);
@@ -169,6 +162,10 @@ void Simulator::prmThread() {
                 goal.x, goal.y);
       continue;
     }
+
+    //Start the build process
+    ROS_INFO("Starting build: {%.1f, %.1f} to {%.1f, %.1f}",
+             robotOrd.x, robotOrd.y, goal.x, goal.y);
 
     int cnt = 0;
     std::vector<TGlobalOrd> path;
@@ -182,27 +179,9 @@ void Simulator::prmThread() {
       }
     }
 
-    //Show the overlay of the prm
-    gmap_.showOverlay(colourMap, path);
-    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colourMap).toImageMsg();
-    overlay_.publish(msg);
-    ROS_INFO("Sent prm overlay");
-
-    if(path.size() > 0){
-      //Send the waypoints
-      geometry_msgs::PoseArray posePath;
-      for(auto const &waypoint: path){
-        geometry_msgs::Pose w;
-        w.position.x = waypoint.x;
-        w.position.y = waypoint.y;
-        w.position.z = robotPos.position.z;
-
-        posePath.poses.push_back(w);
-      }
-
-      path_.publish(posePath);
-      ROS_INFO("Sent path");
-    }
+    //Send infomration
+    sendOverlay(colourMap, path);
+    sendPath(path);
   }
 }
 
@@ -221,4 +200,47 @@ bool Simulator::requestGoal(prm_sim::RequestGoal::Request &req, prm_sim::Request
 
   ROS_INFO("sending back response: [%d]", res.ack);
   return true;
+}
+
+void Simulator::consumeWorldInformation(cv::Mat &ogMap, geometry_msgs::Pose &robotPos){
+  //Get information about the world if available
+  buffer_.access.lock();
+  if(buffer_.ogMapDeq.size() > 0){
+    ogMap = buffer_.ogMapDeq.front();
+    buffer_.ogMapDeq.pop_front();
+  }
+
+  if(buffer_.poseDeq.size() > 0){
+    robotPos = buffer_.poseDeq.back();
+    buffer_.poseDeq.pop_front();
+  }
+  buffer_.access.unlock();
+}
+
+void Simulator::sendOverlay(cv::Mat &colourMap, std::vector<TGlobalOrd> path){
+  //Show the overlay of the prm
+  gmap_.showOverlay(colourMap, path);
+
+  sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colourMap).toImageMsg();
+  overlay_.publish(msg);
+  ROS_INFO("Sent PRM overlay...");
+}
+
+void Simulator::sendPath(std::vector<TGlobalOrd> path){
+  if(path.size() > 0){
+    //Send the waypoints
+    geometry_msgs::PoseArray posePath;
+    for(auto const &waypoint: path)
+    {
+      geometry_msgs::Pose w;
+      w.position.x = waypoint.x;
+      w.position.y = waypoint.y;
+      //TODO: do we need -> w.position.z = robotPos.position.z;
+
+      posePath.poses.push_back(w);
+    }
+
+    path_.publish(posePath);
+    ROS_INFO("Sent path information...");
+  }
 }
