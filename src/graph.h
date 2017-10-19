@@ -77,6 +77,17 @@ public:
    */
   std::map<vertex, edges> container() const;
 
+  /*! @brief Remove a vertex from the graph.
+   *
+   *  @return TRUE - If vertex was successfully removed.
+   */
+  bool removeVertex(const vertex v);
+
+  /*! @brief Removes edges associated with a vertex.
+   *
+   */
+  void removeEdgesWithVertex(const vertex v);
+
 private:
   unsigned int maxNeighbours_;         /*!< A vertex has a max amount of neighbours */
   std::map<vertex, edges> container_;  /*!< A container of all verticies and their neighbours (edges) */

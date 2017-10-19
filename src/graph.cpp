@@ -31,6 +31,17 @@ bool Graph::addVertex(const vertex v)
   return true;
 }
 
+bool Graph::removeVertex(const vertex v)
+{
+  auto const conIter = container_.find(v);
+  if(conIter == container_.end()){
+    return false;
+  }
+
+  container_.erase(conIter);
+  return true;
+}
+
 bool Graph::addEdge(const vertex v, const vertex u, const weight w)
 {
   if(container_.find(v) == container_.end() || container_.find(u) == container_.end()){
@@ -43,10 +54,34 @@ bool Graph::addEdge(const vertex v, const vertex u, const weight w)
     return false;
   }
 
+  //There is already an edge between these neighbours
+  container_.find(v)->second.find(edge(u,w));
+
   container_.find(v)->second.insert(edge(u, w));
   container_.find(u)->second.insert(edge(v, w));
 
   return true;
+}
+
+void Graph::removeEdgesWithVertex(const vertex v)
+{
+  std::set<edge>::iterator it;
+
+  if(container_.find(v) != container_.end()){
+    //It might still be in the container, clear all its edges
+    container_.find(v)->second.clear();
+  }
+
+  //All other vertex edges
+  for(auto &u: container_){
+    for(it=u.second.begin(); it != u.second.end();){
+      edge e = *it;
+      if(e.first == v)
+        u.second.erase(it++);
+      else
+        ++it;
+    }
+  }
 }
 
 /*! @brief Finds the closest vertex in a queue.

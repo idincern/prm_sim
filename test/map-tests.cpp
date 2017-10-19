@@ -613,6 +613,47 @@ TEST(Graph, MaxNeighbours){
   ASSERT_FALSE(g.addEdge(0, 4, 1.0));
 }
 
+TEST(Graph, RemoveVertex){
+  Graph g(3);
+
+  g.addVertex(0);
+  g.addVertex(1);
+  g.addVertex(2);
+
+  ASSERT_TRUE(g.removeVertex(0));
+  ASSERT_TRUE(g.removeVertex(1));
+
+  std::map<vertex, edges> c = g.container();
+  ASSERT_TRUE(c.find(0) == c.end());
+  ASSERT_TRUE(c.find(1) == c.end());
+  ASSERT_FALSE(c.find(2) == c.end());
+}
+
+TEST(Graph, RemoveEdge){
+  Graph g(5);
+
+  g.addVertex(0);
+  g.addVertex(1);
+  g.addVertex(2);
+  g.addVertex(3);
+  g.addVertex(4);
+  g.addVertex(5);
+
+  g.addEdge(0, 1, 1.0);
+  g.addEdge(0, 2, 1.0);
+  g.addEdge(2, 3, 1.0);
+  g.addEdge(2, 4, 1.0);
+
+  g.removeEdgesWithVertex(0);
+
+  std::map<vertex, edges> c = g.container();
+
+  EXPECT_EQ(0, c[1].size());
+  EXPECT_EQ(2, c[2].size());
+  EXPECT_EQ(0, c[0].size());
+}
+
+
 //TODO:Rename this utests
 //TODO: Expect arguments on cmdline to optionally run with images
 //TODO: Test for narrow corridors
