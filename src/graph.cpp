@@ -39,6 +39,9 @@ bool Graph::removeVertex(const vertex v)
   }
 
   container_.erase(conIter);
+
+  //Make sure we remove edges with this vertex as well
+  removeEdgesWithVertex(v);
   return true;
 }
 
