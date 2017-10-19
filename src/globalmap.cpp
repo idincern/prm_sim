@@ -36,35 +36,66 @@ GlobalMap::GlobalMap(double mapSize, double mapRes):
   reference_.y = 0;
 }
 
+bool GlobalMap::violatingSpace(TGlobalOrd ord, double r){
+  for(auto const &n: network_){
+    if(distance(ord, n.second) < 2*r){
+      return true;
+    }
+  }
+
+  return false;
+}
+
 std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &cspace, TGlobalOrd start, TGlobalOrd goal)
 {
-  vertex vStart, vGoal;     //Vertex representation of the global ords
+  vertex vStart, vGoal;
   std::vector<TGlobalOrd> path;
+  std::vector<vertex> vPath;
 
   //Check that both ordinates are accessible
   if(!ordinateAccessible(cspace, start) || !ordinateAccessible(cspace, goal)){
     return path;
   }
 
-  //If both in the graph, perhaps there is already a path?
+  //If both verticies in graph, perhaps there is an existing path...
   if(existsAsVertex(start) && existsAsVertex(goal))
   {
     lookup(start, vStart);
     lookup(start, vGoal);
 
-    std::vector<vertex> vPath = graph_.shortestPath(vStart, vGoal);
+    vPath = graph_.shortestPath(vStart, vGoal);
     if(vPath.size() > 0){
       return optimisePath(cspace, toOrdPath(vPath));
     }
   }
 
-  unsigned int attempts(0);
-  while(attempts < (mapSize_ * mapSize_)){
+  //Build 100 nodes at a time
+  unsigned int numNodes = network_.size() + 200;
+
+  //TODO: Put in header calculate seperation radius
+  //This method is called LD-PRM (Low Dispersion Probablistic Roadmap) see http://cdn.intechopen.com/pdfs/45913.pdf
+  double freeSpace = lmap_.freeConfigSpace(cspace);
+  double r = (1.0/(double)numNodes)*std::sqrt((freeSpace*(numNodes - std::pow(numNodes, 0.5)))/M_PI);
+
+  vStart = findOrAdd(start);
+  vGoal = findOrAdd(goal);
+
+  //Connect start and goal to graph, before connecting everyone else
+  connectNeighbour(cspace, vStart, 5);
+  connectNeighbour(cspace, vGoal, 5);
+
+  vPath = graph_.shortestPath(vStart, vGoal);
+  if(vPath.size() > 0){
+    return optimisePath(cspace, toOrdPath(vPath));
+  }
+
+  while(network_.size() < numNodes){
     TGlobalOrd randomOrd;
     //Generate random ords within the map space...
     std::default_random_engine generator(std::chrono::duration_cast<std::chrono::nanoseconds>
                                          (std::chrono::system_clock::now().time_since_epoch()).count());
 
+    //TODO: Closely examine this...
     std::uniform_real_distribution<double> xDist(reference_.x - (mapSize_/2), reference_.x + (mapSize_/2));
     std::uniform_real_distribution<double> yDist(reference_.y - (mapSize_/2), reference_.y + (mapSize_/2));
 
@@ -72,31 +103,32 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &cspace, TGlobalOrd start, TGlo
     randomOrd.x = std::round((xDist(generator) * 10.0))/10.0;
     randomOrd.y = std::round((yDist(generator) * 10.0))/10.0;
 
-    cv::Point pRand = lmap_.convertToPoint(reference_, randomOrd);
-
-    //Only add ords that are accessible
-    if(!lmap_.isAccessible(cspace, pRand)){
-      continue;
+    if(existsAsVertex(randomOrd)){
+      continue; //Already exists in graph, skip
     }
 
-    //See if vertex exists in graph, if not - add!
-    findOrAdd(randomOrd);
-    attempts++;
+    if(!lmap_.isAccessible(cspace, lmap_.convertToPoint(reference_, randomOrd))){
+      continue; //Is not accessible in the ogmap, skip
+    }
+
+    if(violatingSpace(randomOrd, r)){
+      continue; //We want uniform distribution
+    }
+
+    //We know the following will only add to graph
+    addOrdinate(randomOrd);
   }
 
-  //Connect all the newely generated nodes (verticies)
-  connectNodes(cspace, true);
+  std::cout << "Build complete" << std::endl;
+  connectNeighbour(cspace, vStart, 5);
+  connectNeighbour(cspace, vGoal, 5);
+  connectNeighbours(cspace, 5);
 
-  //Find or add the start/goal verticies to/in our graph
-  vStart = findOrAdd(start);
-  vGoal = findOrAdd(goal);
+  std::cout << "Connected neighbours" << std::endl;
 
-  //Connect to the PRM
-  connectNode(cspace, vStart, false);
-  connectNode(cspace, vGoal, false);
 
   //Find a path and optimise the graph.
-  std::vector<vertex> vPath = graph_.shortestPath(vStart, vGoal);
+  vPath = graph_.shortestPath(vStart, vGoal);
 
   if(vPath.size() > 0){
     return optimisePath(cspace, toOrdPath(vPath));
@@ -106,21 +138,18 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &cspace, TGlobalOrd start, TGlo
 }
 
 std::vector<TGlobalOrd> GlobalMap::query(cv::Mat &cspace, TGlobalOrd start, TGlobalOrd goal){
-  //This function connects the start and end goal to the graph
-  //and attempts to find a connection through the prm
-  vertex vStart = findOrAdd(start);
-  vertex vGoal = findOrAdd(goal);
+  vertex vStart, vGoal;
 
-  connectNode(cspace, vStart, true);
-  connectNode(cspace, vStart, true);
+  if(!lookup(start, vStart) || !lookup(goal, vGoal)){
+    return std::vector<TGlobalOrd>();
+  }
 
-  //Find a path and optimise the graph.
+  //Assumes the path has already been found
   std::vector<vertex> vPath = graph_.shortestPath(vStart, vGoal);
   if(vPath.size() > 0){
     return optimisePath(cspace, toOrdPath(vPath));
   }
 
-  //TODO: THIS IS WIP
   return std::vector<TGlobalOrd>();
 }
 
@@ -216,19 +245,6 @@ std::vector<TGlobalOrd> GlobalMap::toOrdPath(std::vector<vertex> path){
   return ordPath;
 }
 
-/*! @brief Calculates the euclidean distance between two ordiantes.
- *
- *  @param p1 The first point.
- *  @param p2 The second point
- *  @return double - The distance between the two points.
- */
-double distance(TGlobalOrd p1, TGlobalOrd p2){
-  double a = std::abs(p2.x - p1.x);
-  double b = std::abs(p2.y - p1.y);
-
-  return std::sqrt(std::pow(a, 2) + std::pow(b, 2));
-}
-
 void GlobalMap::connectNode(cv::Mat &cspace, vertex node, bool imposeMaxDist){
   TGlobalOrd nodeOrd = network_[node];
 
@@ -300,6 +316,68 @@ unsigned int GlobalMap::neighboursInDist(cv::Mat &cspace, TGlobalOrd nodeOrd, do
   return candidates;
 }
 
+//Sorts in order of priority
+std::vector<TGlobalOrd> GlobalMap::getNeighbours(vertex node){
+  std::vector<TGlobalOrd> neighbours;
+  TGlobalOrd nodeOrd = network_[node];
+
+  //Attempt to connect each node in network to k closest neighbours
+  for(auto const &neighbour: network_){
+    if(neighbour.first == node){
+      continue; //don't want to connect to ourselves
+    }
+
+    //Add all neighbours to list
+    neighbours.push_back(neighbour.second);
+  }
+
+  //Sort neighbours by distance.
+  std::sort(neighbours.begin(), neighbours.end(),[nodeOrd](const TGlobalOrd &lhs, const TGlobalOrd &rhs){
+    return distance(lhs, nodeOrd) < distance(rhs, nodeOrd);});
+
+  return neighbours;
+}
+
+void GlobalMap::connectNeighbour(cv::Mat &cspace, vertex node, unsigned int k){
+  std::vector<TGlobalOrd> neighbours;
+  TGlobalOrd nodeOrd = network_[node];
+
+  //Attempt to connect each node in network to k closest neighbours
+  neighbours = getNeighbours(node);
+
+  int cnt(0);
+  for(auto const &neighbour: neighbours){
+    if(cnt == k)
+      break;
+
+    vertex vNeighbour;
+    if(!lookup(neighbour, vNeighbour)){
+      //something went wrong adding this neighbour, continue to next
+      continue;
+    }
+
+    //Attempt to connect to neighbour
+    cv::Point pCurrent = lmap_.convertToPoint(reference_, nodeOrd);
+    cv::Point pN = lmap_.convertToPoint(reference_, neighbour);
+    if(lmap_.canConnect(cspace,pCurrent,pN)){
+      graph_.addEdge(node, vNeighbour, distance(nodeOrd, neighbour));
+    }
+
+    cnt++;
+  }
+}
+
+void GlobalMap::connectNeighbours(cv::Mat &cspace, unsigned int k){
+  //Attempt to connect each node in the network to its k closest neighbours
+  for(auto const &node: network_){
+    if(!graph_.canConnect(node.first)){
+      continue; //This node has already maxed out its connections
+    }
+
+    connectNeighbour(cspace, node.first, k);
+  }
+}
+
 
 void GlobalMap::connectNodes(cv::Mat &cspace, bool imposeMaxDist){
   //Prioritise nodes by number of neighbours in vicinity
@@ -328,12 +406,18 @@ vertex GlobalMap::findOrAdd(TGlobalOrd ordinate){
   if(existsAsVertex(ordinate)){
     lookup(ordinate, v);
   } else {
-    //Generate a new vertex and add to graph, also adding
-    //to the internal lookup table.
-    v = nextVertexId();
-    graph_.addVertex(v);
-    network_.insert(std::make_pair(v, ordinate));
+    v = addOrdinate(ordinate);
   }
+
+  return v;
+}
+
+vertex GlobalMap::addOrdinate(TGlobalOrd ordinate){
+  //Generate a new vertex and add to graph, also adding
+  //to the internal lookup table.
+  vertex v = nextVertexId();
+  graph_.addVertex(v);
+  network_.insert(std::make_pair(v, ordinate));
 
   return v;
 }
@@ -390,5 +474,13 @@ bool GlobalMap::ordinateAccessible(cv::Mat &cspace, TGlobalOrd ordinate)
 void GlobalMap::expandConfigSpace(cv::Mat &space, double robotDiameter)
 {
   lmap_.expandConfigSpace(space, robotDiameter);
+}
+
+
+double GlobalMap::distance(TGlobalOrd p1, TGlobalOrd p2){
+  double a = std::abs(p2.x - p1.x);
+  double b = std::abs(p2.y - p1.y);
+
+  return std::sqrt(std::pow(a, 2) + std::pow(b, 2));
 }
 

@@ -13,7 +13,7 @@
 #include <vector>
 
 #define SHOW_PRM true
-#define MAX_TRIES 3   //TODO: Through command line
+#define MAX_TRIES 10   //TODO: Through command line
 
 /* Various opencv images for testing */
 
@@ -98,6 +98,35 @@ cv::Mat pole(void){
 
   cv::Mat image(pixels, pixels, CV_8UC1, cv::Scalar(255, 255, 255));
   cv::circle(image, cv::Point(100,100), 50, cv::Scalar(0,0,0), -1);
+
+  return image;
+}
+
+cv::Mat passage(void){
+  //Contains multiple boxes
+  double mapSize = 20.0;
+  double res = 0.1;
+  int pixels = (int) mapSize / res;
+  
+  cv::Mat image(pixels, pixels, CV_8UC1, cv::Scalar(255, 255, 255));
+  
+  bool twoBoxes = true;
+
+  for(int i = 0; i < image.rows; i+=10){
+    if(twoBoxes){
+      cv::rectangle(image, cv::Point(25, i),cv::Point(75, i+10),cv::Scalar(0,0,0),-1);
+      cv::rectangle(image, cv::Point(125,i),cv::Point(175, i+10),cv::Scalar(0,0,0),-1);
+    } else {
+      cv::rectangle(image, cv::Point(0, i),cv::Point(20, i+10),cv::Scalar(0,0,0),-1);
+      cv::rectangle(image, cv::Point(90,i),cv::Point(110, i+10),cv::Scalar(0,0,0),-1);
+      cv::rectangle(image, cv::Point(190, i),cv::Point(200, i+10),cv::Scalar(0,0,0),-1);
+    }
+
+    twoBoxes != twoBoxes;
+  }
+
+  cv::rectangle(image, cv::Point(0, 20),cv::Point(100, 25),cv::Scalar(255, 255, 255),-1);
+  cv::rectangle(image, cv::Point(100, 120),cv::Point(200, 125),cv::Scalar(255, 255, 255),-1);
 
   return image;
 }
@@ -328,6 +357,12 @@ TEST(PrmGen, SimplePath){
 
     if(cnt++ > MAX_TRIES)
       break;
+
+    if(SHOW_PRM){
+      g.showOverlay(colourMap, path);
+      cv::imshow("test", colourMap);
+      cv::waitKey(1000);
+    }
   }
 
   if(SHOW_PRM){
@@ -360,6 +395,12 @@ TEST(PrmGen, ComplicatedPath){
 
     if(cnt++ > MAX_TRIES)
       break;
+
+    if(SHOW_PRM){
+      g.showOverlay(colourMap, path);
+      cv::imshow("test", colourMap);
+      cv::waitKey(1000);
+    }
   }
 
   if(SHOW_PRM){
@@ -390,6 +431,12 @@ TEST(PrmGen, Hallway){
 
     if(cnt++ > MAX_TRIES)
       break;
+
+    if(SHOW_PRM){
+      g.showOverlay(colourMap, path);
+      cv::imshow("test", colourMap);
+      cv::waitKey(1000);
+    }
   }
 
   if(SHOW_PRM){
@@ -420,6 +467,48 @@ TEST(PrmGen, Pole){
 
     if(cnt++ > MAX_TRIES)
       break;
+
+    if(SHOW_PRM){
+      g.showOverlay(colourMap, path);
+      cv::imshow("test", colourMap);
+      cv::waitKey(1000);
+    }
+  }
+
+  if(SHOW_PRM){
+    g.showOverlay(colourMap, path);
+    cv::imshow("test", colourMap);
+    cv::waitKey(1000);
+  }
+
+  ASSERT_TRUE(path.size() > 0);
+}
+
+TEST(PrmGen, Passage){
+  cv::Mat map = passage();
+  cv::Mat colourMap;
+  cv::cvtColor(map, colourMap, CV_GRAY2BGR);
+
+  TGlobalOrd robot{10, 10}, start{1, 1}, goal{19, 19};
+  GlobalMap g(20.0, 0.1);
+
+  g.setReference(robot);
+  g.expandConfigSpace(map, 0.2);
+
+  std::vector<TGlobalOrd> path;
+
+  int cnt(0);
+  while(path.size() <= 0){
+    path = g.build(map, start, goal);
+
+    if(cnt++ > MAX_TRIES)
+      break;
+
+    if(SHOW_PRM){
+      g.showOverlay(colourMap, path);
+      cv::imshow("test", colourMap);
+      cv::waitKey(1000);
+    }
   }
 
   if(SHOW_PRM){

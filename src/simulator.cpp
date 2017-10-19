@@ -173,7 +173,7 @@ void Simulator::prmThread() {
       ROS_INFO("  Building nodes...");
       path = gmap_.build(ogMap, robotOrd, goal);
 
-      if(cnt++ > 4){
+      if(cnt++ > 10){
         ROS_INFO("  Finding a path was more difficult than expected...");
         break;
       }

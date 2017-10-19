@@ -78,7 +78,7 @@ double LocalMap::freeConfigSpace(cv::Mat &cspace){
     }
   }
 
-  return freePixels * resolution_;
+  return freePixels * resolution_ * resolution_ * resolution_;
 }
 
 void LocalMap::overlayPRM(cv::Mat &space, std::vector<std::pair<cv::Point, cv::Point>> prm){

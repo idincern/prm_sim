@@ -171,6 +171,21 @@ private:
   vertex nextVertexId();
 
   unsigned int neighboursInDist(cv::Mat &cspace, TGlobalOrd nodeOrd, double dist);
+  bool violatingSpace(TGlobalOrd ord, double r);
+
+  /*! @brief Calculates the euclidean distance between two ordiantes.
+   *
+   *  @param p1 The first point.
+   *  @param p2 The second point
+   *  @return double - The distance between the two points.
+   */
+  static double distance(TGlobalOrd p1, TGlobalOrd p2);
+
+  vertex addOrdinate(TGlobalOrd ordinate);
+  void connectNeighbour(cv::Mat &cspace, vertex node, unsigned int k);
+  void connectNeighbours(cv::Mat &cspace, unsigned int k);
+  std::vector<TGlobalOrd> getNeighbours(vertex node);
+  std::vector<TGlobalOrd> virtualBuild(cv::Mat &cspace, TGlobalOrd start, TGlobalOrd goal);
 };
 
 #endif // GLOBALMAP_H
