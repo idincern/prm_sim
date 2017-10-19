@@ -60,6 +60,18 @@ std::vector<TGlobalOrd> GlobalMap::build(cv::Mat &space, TGlobalOrd start, TGlob
     }
   }
 
+  //Both are in the graph, perhaps there is already a path?
+  if(existsAsVertex(start) && existsAsVertex(goal))
+  {
+    lookup(start, vStart);
+    lookup(start, vGoal);
+
+    std::vector<vertex> vPath = graph_.shortestPath(vStart, vGoal);
+    if(vPath.size() > 0){
+      return optimisePath(space, toOrdPath(vPath));
+    }
+  }
+
   unsigned int nodeCnt(0);
 
   //TODO: Dynamically work out nodes?

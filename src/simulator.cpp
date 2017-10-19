@@ -26,9 +26,9 @@
 #include <signal.h>
 
 namespace enc = sensor_msgs::image_encodings;
-static std::mutex              GoalProcess;      /*!< TODO */
-static std::condition_variable WaitOnGoal;      /*!< TODO */
-static bool GoalRecieved = false;
+
+static std::mutex              goalAccess;      /*!< TODO */
+static std::condition_variable newGoal;      /*!< TODO */
 
 Simulator::Simulator(ros::NodeHandle nh, TWorldInfoBuffer &buffer):
   buffer_(buffer), nh_(nh), it_(nh)
@@ -47,15 +47,13 @@ Simulator::Simulator(ros::NodeHandle nh, TWorldInfoBuffer &buffer):
   pn.param<double>("resolution", mapResolution, 0.1);
   pn.param<double>("robot_diameter", robotDiameter, 0.2);
 
-  //TODO: Proper flow?
+  ROS_INFO("Init with: map_size={%f} resolution={%f} robot_diameter={%f}",
+           mapSize, mapResolution, robotDiameter);
+
   gmap_ = GlobalMap(mapSize, mapResolution, robotDiameter);
-  //  gmap_.setMapSize(mapSize);
-  //  gmap_.setResolution(mapResolution);
-  //  gmap_.setRobotDiameter(robotDiameter);
 }
 
 void Simulator::prmThread() {
-  //Initialise images and goals??
   cv::Mat ogMap;
   geometry_msgs::Pose robotPos;
 
@@ -74,17 +72,12 @@ void Simulator::prmThread() {
   }
 
   ROS_INFO("Ready to recieve requests...");
+  std::unique_lock<std::mutex> lock(goalAccess);
+
   while(ros::ok()){
-    //Condition var to wait on goal...
-    std::unique_lock<std::mutex> ulock(GoalProcess);
-
-    WaitOnGoal.wait(ulock, []{return GoalRecieved || !ros::ok();});
-
-    if(!ros::ok()){
-      break;
-    }
-
-    GoalRecieved = false;
+    //Wait until a new goal has been recieved
+    newGoal.wait(lock);
+    TGlobalOrd goal = currentGoal_;
 
     //Get information about the world if available
     buffer_.access.lock();
@@ -100,10 +93,12 @@ void Simulator::prmThread() {
     buffer_.access.unlock();
 
     //Update the reference for the localMap
+    ROS_INFO("Setting reference: {%f, %f}", robotPos.position.x, robotPos.position.y);
     TGlobalOrd robotOrd = {robotPos.position.x, robotPos.position.y};
     gmap_.setReference(robotOrd);
 
     if(ogMap.empty()){
+      //Something has gone wrong during image transmission, continue
       ROS_ERROR("Empty OgMap.");
       continue;
     }
@@ -113,14 +108,14 @@ void Simulator::prmThread() {
     cv::cvtColor(ogMap, colourMap, CV_GRAY2BGR);
 
     ROS_INFO("Starting build: {%f, %f} to {%f, %f}",
-             robotOrd.x, robotOrd.y, currentGoal_.x, currentGoal_.y);
+             robotOrd.x, robotOrd.y, goal.x, goal.y);
 
     int cnt(1);
-    std::vector<TGlobalOrd> path = gmap_.build(ogMap, robotOrd, currentGoal_);
+    std::vector<TGlobalOrd> path = gmap_.build(ogMap, robotOrd, goal);
     while(path.size() == 0){
       cnt++;
       ROS_INFO("Path find failed... Trying again. Attempt: %d", cnt);
-      path = gmap_.build(ogMap, robotOrd, currentGoal_);
+      path = gmap_.build(ogMap, robotOrd, goal);
 
       if(cnt > 2){
         ROS_INFO("Cannot reach goal.");
@@ -150,23 +145,19 @@ void Simulator::prmThread() {
       ROS_INFO("Sent path");
     }
   }
-
 }
 
 
 bool Simulator::requestGoal(prm_sim::RequestGoal::Request &req, prm_sim::RequestGoal::Response &res)
 {
-  ROS_INFO("request: x=%ld, y=%ld", (long int)req.x, (long int)req.y);
+  ROS_INFO("Goal request: x=%ld, y=%ld", (long int)req.x, (long int)req.y);
 
   //TODO: Check if Goal is within map space??
-  res.ack = true;
   currentGoal_.x = req.x;
   currentGoal_.y = req.y;
 
-  GoalRecieved = true;
-  WaitOnGoal.notify_one();
-
-  //TODO: Smart check. Is current goal equal to old goal?
+  newGoal.notify_one();
+  res.ack = true;
 
   ROS_INFO("sending back response: [%d]", res.ack);
   return true;

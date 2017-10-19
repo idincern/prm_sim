@@ -4,6 +4,8 @@
 #include "worldretrieve.h"
 #include "types.h"
 
+#include <signal.h>
+
 int main(int argc, char **argv) {
   /**
    * The ros::init() function needs to see argc and argv so that it can perform
@@ -35,9 +37,11 @@ int main(int argc, char **argv) {
   ros::spin();
 
   /**
-   * Let's cleanup everything, shutdown ros and join the thread
+   * Let's cleanup everything, shutdown ros and join the threads
    */
   ros::shutdown();
+
+  //TODO: work out what to do when SIGINT is recieved in threads.
 
   t1.join();
   t2.join();
