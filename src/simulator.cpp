@@ -6,7 +6,7 @@
  *  @date 12-10-2017
 */
 #include "simulator.h"
-#include "globalmap.h"
+#include "prmplanner.h"
 
 #include "sensor_msgs/image_encodings.h"
 #include "geometry_msgs/PoseArray.h"
@@ -54,7 +54,7 @@ Simulator::Simulator(ros::NodeHandle nh, TWorldInfoBuffer &buffer):
   ROS_INFO("Init with: map_size={%.1f} resolution={%.1f} robot_diameter={%.1f}",
            mapSize, mapResolution, robotDiameter_);
 
-  gmap_ = GlobalMap(mapSize, mapResolution);
+  gmap_ = PrmPlanner(mapSize, mapResolution);
 }
 
 //void Simulator::queryThread(){

@@ -2,7 +2,7 @@
 #include "../src/types.h"
 #include "../src/localmap.h"
 #include "../src/graph.h"
-#include "../src/globalmap.h"
+#include "../src/prmplanner.h"
 
 #include <opencv2/imgproc/imgproc.hpp>
 #include <image_transport/image_transport.h>
@@ -344,7 +344,7 @@ TEST(PrmGen, SimplePath){
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
   TGlobalOrd robot{10, 10}, goal{15, 15}, start{5,5};
-  GlobalMap g(20.0, 0.1);
+  PrmPlanner g(20.0, 0.1);
 
   g.setReference(robot);
   g.expandConfigSpace(map, 0.2);
@@ -382,7 +382,7 @@ TEST(PrmGen, ComplicatedPath){
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
   TGlobalOrd robot{10, 10}, start{1, 1}, goal{10, 19};
-  GlobalMap g(20.0, 0.1);
+  PrmPlanner g(20.0, 0.1);
 
   g.setReference(robot);
   g.expandConfigSpace(map, 0.2);
@@ -418,7 +418,7 @@ TEST(PrmGen, Hallway){
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
   TGlobalOrd robot{10, 10}, start{4, 2}, goal{19, 14};
-  GlobalMap g(20.0, 0.1);
+  PrmPlanner g(20.0, 0.1);
 
   g.setReference(robot);
   g.expandConfigSpace(map, 0.2);
@@ -454,7 +454,7 @@ TEST(PrmGen, Pole){
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
   TGlobalOrd robot{10, 10}, start{1, 1}, goal{19, 19};
-  GlobalMap g(20.0, 0.1);
+  PrmPlanner g(20.0, 0.1);
 
   g.setReference(robot);
   g.expandConfigSpace(map, 0.2);
@@ -490,7 +490,7 @@ TEST(PrmGen, Passage){
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
   TGlobalOrd robot{10, 10}, start{1, 1}, goal{19, 19};
-  GlobalMap g(20.0, 0.1);
+  PrmPlanner g(20.0, 0.1);
 
   g.setReference(robot);
   g.expandConfigSpace(map, 0.2);
@@ -526,7 +526,7 @@ TEST(PrmGen, NoPath){
   cv::Mat colourMap;
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
-  GlobalMap g(20.0, 0.1);
+  PrmPlanner g(20.0, 0.1);
   TGlobalOrd robot{10, 10}, start{1, 5}, goal{10, 19};
   g.setReference(robot);
   g.expandConfigSpace(map, 0.2);

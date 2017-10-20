@@ -14,7 +14,7 @@
 
 #include "ros/ros.h"
 #include "types.h"
-#include "globalmap.h"
+#include "prmplanner.h"
 #include "prm_sim/RequestGoal.h"
 
 //TODO: Should this be called simulator??
@@ -40,7 +40,7 @@ private:
   image_transport::Publisher overlay_;      /*!< Publishes an overlay of the prm on top of the OgMap to /prm */
   ros::Publisher path_;                     /*!< Publishes the path between robot and goal on /path */
 
-  GlobalMap gmap_;
+  PrmPlanner gmap_;
   double robotDiameter_; //TODO
 
   //TODO: Do these need to be atomic?

@@ -67,7 +67,6 @@ void LocalMap::expandConfigSpace(cv::Mat &space, double robotDiameter){
 }
 
 double LocalMap::freeConfigSpace(cv::Mat &cspace){
-  //Dumb in that it simply calculates the amount of free pixels currently seen
   unsigned int freePixels(0);
 
   for(int i = 0; i < cspace.rows; i++){
@@ -78,6 +77,8 @@ double LocalMap::freeConfigSpace(cv::Mat &cspace){
     }
   }
 
+  //After finding the amount of free pixels, multiply by the resolution^3
+  //to get the effective volume in metres
   return freePixels * resolution_ * resolution_ * resolution_;
 }
 
@@ -139,13 +140,15 @@ bool LocalMap::inMap(cv::Point p){
   return (p.y <= pixelMapSize_ && p.y >= 0) && (p.x <= pixelMapSize_ && p.x >= 0);
 }
 
-void LocalMap::setMapSize(double mapSize)
-{
+void LocalMap::setMapSize(double mapSize){
   pixelMapSize_ = (int) mapSize / resolution_;
 }
 
-void LocalMap::setResolution(double resolution)
-{
+void LocalMap::setResolution(double resolution){
   resolution_ = resolution;
+}
+
+double LocalMap::getMapSize() const{
+  return pixelMapSize_ * resolution_;
 }
 

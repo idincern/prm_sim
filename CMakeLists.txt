@@ -139,7 +139,7 @@ include_directories(
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/prm_sim.cpp
 # )
-add_library(maps src/globalmap.cpp src/graph.cpp src/localmap.cpp src/types.h)
+add_library(planner src/prmplanner.cpp src/graph.cpp src/localmap.cpp src/types.h)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -166,7 +166,7 @@ add_executable(${PROJECT_NAME}_node src/main.cpp src/worldretrieve.cpp src/simul
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES} maps)
+target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES} planner)
 
 #############
 ## Install ##
@@ -210,10 +210,10 @@ target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES} maps)
 ## Add gtest based cpp test target and link libraries
 catkin_add_gtest(${PROJECT_NAME}-test test/map-tests.cpp)
 if(TARGET ${PROJECT_NAME}-test)
-   target_link_libraries(${PROJECT_NAME}-test ${catkin_LIBRARIES} maps)
+   target_link_libraries(${PROJECT_NAME}-test ${catkin_LIBRARIES} planner)
 endif()
 
-target_link_libraries(${PROJECT_NAME}-test maps)
+target_link_libraries(${PROJECT_NAME}-test planner)
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)

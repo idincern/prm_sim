@@ -181,13 +181,11 @@ std::vector<vertex> Graph::shortestPath(const vertex start, const vertex goal){
   return constructPath(parents, goal);
 }
 
-std::map<vertex, edges> Graph::container() const
-{
+std::map<vertex, edges> Graph::container() const{
   return container_;
 }
 
-bool Graph::canConnect(const vertex v)
-{
+bool Graph::canConnect(const vertex v){
   if(container_.find(v) == container_.end()){
     return false;
   }
@@ -197,4 +195,12 @@ bool Graph::canConnect(const vertex v)
   }
 
   return true;
+}
+
+unsigned int Graph::getEdgeCount(const vertex v){
+  if(container_.find(v) == container_.end()){
+    return 0;
+  }
+
+  return container_.find(v)->second.size();
 }

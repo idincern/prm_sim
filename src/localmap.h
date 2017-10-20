@@ -112,8 +112,21 @@ public:
    */
   void setResolution(double resolution);
 
-  //TODO:
+  /*! @brief Meaures the volume of the free (known) configuration space.
+   *
+   *  Akin to the Lebesgue measure of the collision-free configuration space,
+   *  this function is used as a metric to determine how much of cspace is free.
+   *
+   *  @param cspace The configuration space to measure.
+   *  @return double The measured volume.
+   */
   double freeConfigSpace(cv::Mat &cspace);
+
+  /*! @brief Gets the size of the map
+   *
+   *  @return double - The map size in meters.
+   */
+  double getMapSize() const;
 
 private:
   double resolution_;         /*!< Will specify the amount of pixels per meter */

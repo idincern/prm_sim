@@ -77,6 +77,7 @@ public:
    */
   std::map<vertex, edges> container() const;
 
+  //TODO: CHECK IF WE NEED....
   /*! @brief Remove a vertex from the graph.
    *
    *  @return TRUE - If vertex was successfully removed.
@@ -87,6 +88,11 @@ public:
    *
    */
   void removeEdgesWithVertex(const vertex v);
+
+  /*! @brief Returns the amount of edges a vertex has.
+   *
+   */
+  unsigned int getEdgeCount(const vertex v);
 
 private:
   unsigned int maxNeighbours_;         /*!< A vertex has a max amount of neighbours */
