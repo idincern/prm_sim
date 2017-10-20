@@ -29,6 +29,7 @@ int main(int argc, char **argv) {
 
   std::thread t1(&WorldRetrieve::heartbeatThread, wr);
   std::thread t2(&Simulator::plannerThread, sim);
+  std::thread t3(&Simulator::overlayThread, sim);
 
   /**
    * ros::spin() will enter a loop, pumping callbacks.  With this version, all
@@ -43,9 +44,14 @@ int main(int argc, char **argv) {
   ros::shutdown();
 
   //TODO: work out what to do when SIGINT is recieved in threads.
+  //TODO: check correct data on /path topic.
+  //TODO: README
+  //TODO: Bring in files from a3_help
+  //TODO: Write script to open terminals
 
   t1.join();
   t2.join();
+  t3.join();
 
   return 0;
 }

@@ -38,9 +38,9 @@ static std::condition_variable NewGoal;     /*!< Used to wait on a goal set by u
 Simulator::Simulator(ros::NodeHandle nh, TWorldInfoBuffer &buffer):
   buffer_(buffer), nh_(nh), it_(nh)
 {
-  path_     = nh_.advertise<geometry_msgs::PoseArray>("path", 1);
-  overlay_  = it_.advertise("prm", 1);
-  reqGoal_ = nh_.advertiseService("request_goal", &Simulator::requestGoal, this);
+  pathPub_     = nh_.advertise<geometry_msgs::PoseArray>("path", 1);
+  overlayPub_  = it_.advertise("prm", 1);
+  reqGoal_  = nh_.advertiseService("request_goal", &Simulator::requestGoal, this);
 
   //Get parameters from command line
   ros::NodeHandle pn("~");
@@ -56,11 +56,28 @@ Simulator::Simulator(ros::NodeHandle nh, TWorldInfoBuffer &buffer):
   planner_ = PrmPlanner(mapSize, mapResolution);
 }
 
+void Simulator::overlayThread(){
+  cv::Mat msg;
+
+  while(ros::ok()){
+    if(overlayContainer_.dirty){
+      //We make a copy of the prmOverlay,
+      //otherwise we retain a reference to it which can change
+      //We only want to see change when dirty is set to true
+      overlayContainer_.access.lock();
+      overlayContainer_.prmOverlay.copyTo(msg);
+      overlayContainer_.access.unlock();
+
+      overlayContainer_.dirty = false;
+      ROS_INFO("Updating PRM overlay...");
+    }
+
+    sendOverlay(msg);
+  }
+}
+
 
 void Simulator::plannerThread() {
-  cv::Mat ogMap;
-  geometry_msgs::Pose robotPos;
-
   //Wait until some data has arrived in the world information buffer
   waitForWorldData();
 
@@ -70,17 +87,17 @@ void Simulator::plannerThread() {
   while(ros::ok()){
     //Wait until a new goal has been recieved
     NewGoal.wait(lock);
-    TGlobalOrd currentGoal = goal_;
+    TGlobalOrd currentGoal = goal_; //TODO: Atomic copy?
 
     //Recieve new information from the world buffer
-    consumeWorldData(ogMap, robotPos);
+    consumeWorldData(cspace_, robotPos_);
 
     //Update the reference for the localMap
-    TGlobalOrd robotOrd = {robotPos.position.x, robotPos.position.y};
+    TGlobalOrd robotOrd = {robotPos_.position.x, robotPos_.position.y};
     ROS_INFO("Setting reference: {%.1f, %.1f}", robotOrd.x, robotOrd.y);
     planner_.setReference(robotOrd);
 
-    if(ogMap.empty()){
+    if(cspace_.empty()){
       //Something has gone wrong during image transmission,
       //skip execution for this goal and hope new data has arived
       //on the next go around
@@ -90,20 +107,23 @@ void Simulator::plannerThread() {
 
     //Create colour copy of the OgMap
     cv::Mat colourMap;
-    cv::cvtColor(ogMap, colourMap, CV_GRAY2BGR);
+    overlayContainer_.access.lock();
+    cv::cvtColor(cspace_, overlayContainer_.prmOverlay, CV_GRAY2BGR);
+    overlayContainer_.access.unlock();
 
     //Expand the configuration space
-    planner_.expandConfigSpace(ogMap, robotDiameter_);
+    //TODO: Examine what cspace is doing...
+    planner_.expandConfigSpace(cspace_, robotDiameter_);
 
     //Validate both ordinates
-    if(!planner_.ordinateAccessible(ogMap, robotOrd)){
-      ROS_ERROR(" Robot ordinates {%.1f, %.1f} are not accessible",
+    if(!planner_.ordinateAccessible(cspace_, robotOrd)){
+      ROS_ERROR("Robot ordinates {%.1f, %.1f} are not accessible",
                 robotOrd.x, robotOrd.y);
       continue;
     }
 
-    if(!planner_.ordinateAccessible(ogMap, currentGoal)){
-      ROS_ERROR(" Goal ordinates {%.1f, %.1f} are not accessible",
+    if(!planner_.ordinateAccessible(cspace_, currentGoal)){
+      ROS_ERROR("Goal ordinates {%.1f, %.1f} are not accessible",
                 currentGoal.x, currentGoal.y);
       continue;
     }
@@ -116,18 +136,21 @@ void Simulator::plannerThread() {
     std::vector<TGlobalOrd> path;
     while(path.size() == 0){
       ROS_INFO("  Building nodes...");
-      path = planner_.build(ogMap, robotOrd, currentGoal);
+      path = planner_.build(cspace_, robotOrd, currentGoal);
 
-      if(cnt++ > 10){
-        ROS_INFO("  Finding a path was more difficult than expected...");
+      //Update PRM overlay with network and potentially path
+      overlayContainer_.access.lock();
+      planner_.showOverlay(overlayContainer_.prmOverlay, path);
+      overlayContainer_.access.unlock();
+      overlayContainer_.dirty = true;
+
+      if(cnt++ > 6){ //TODO: make number come in on command line...
+        ROS_INFO("  Could not find path. Perhaps choose a closer goal?");
         break;
       }
     }
 
-    //Send infomration
-    sendOverlay(colourMap, path);
-
-    //Send path
+    //Send path information
     sendPath(path);
   }
 }
@@ -152,14 +175,15 @@ bool Simulator::requestGoal(prm_sim::RequestGoal::Request &req, prm_sim::Request
 {
   ROS_INFO("Goal request: x=%.1f, y=%.1f", (double)req.x, (double)req.y);
 
-  //TODO: Check if Goal is within map space??
   goal_.x = req.x;
   goal_.y = req.y;
 
   NewGoal.notify_one();
-  res.ack = true;
 
-  ROS_INFO("sending back response: [%d]", res.ack);
+  //Note: this cspace might be using old data...
+  res.ack = planner_.ordinateAccessible(cspace_, goal_);
+
+  ROS_INFO("Sending back goal response: [%d]", res.ack);
   return true;
 }
 
@@ -178,13 +202,10 @@ void Simulator::consumeWorldData(cv::Mat &ogMap, geometry_msgs::Pose &robotPos){
   buffer_.access.unlock();
 }
 
-void Simulator::sendOverlay(cv::Mat &colourMap, std::vector<TGlobalOrd> path){
+void Simulator::sendOverlay(cv::Mat &overlay){
   //Show the overlay of the prm
-  planner_.showOverlay(colourMap, path);
-
-  sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colourMap).toImageMsg();
-  overlay_.publish(msg);
-  ROS_INFO("Sent PRM overlay...");
+  sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", overlay).toImageMsg();
+  overlayPub_.publish(msg);
 }
 
 void Simulator::sendPath(std::vector<TGlobalOrd> path){
@@ -196,12 +217,12 @@ void Simulator::sendPath(std::vector<TGlobalOrd> path){
       geometry_msgs::Pose w;
       w.position.x = waypoint.x;
       w.position.y = waypoint.y;
-      //TODO: do we need -> w.position.z = robotPos.position.z;
+      w.position.z = robotPos_.position.z;
 
       posePath.poses.push_back(w);
     }
 
-    path_.publish(posePath);
+    pathPub_.publish(posePath);
     ROS_INFO("Sent path information...");
   }
 }
