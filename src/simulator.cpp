@@ -1,12 +1,17 @@
 /*! @file
  *
- *  @brief TODO
+ *  @brief Simulation for robot path finding.
+ *
+ *  Using an internal LD-PRM path planner, this class listens
+ *  for goal requests on /request_goal then builds a PRM network
+ *  within a supplied configuration space.
+ *  The PRM network is sent as an image to /prm, and the path waypoints
+ *  between robot and goal are sent as a PoseArray to /path.
  *
  *  @author arosspope
  *  @date 12-10-2017
 */
 #include "simulator.h"
-#include "prmplanner.h"
 
 #include "sensor_msgs/image_encodings.h"
 #include "geometry_msgs/PoseArray.h"
@@ -27,20 +32,14 @@
 
 namespace enc = sensor_msgs::image_encodings;
 
-static std::mutex              goalAccess;      /*!< TODO */
-static std::mutex              pathBuilding;
-static std::mutex              construction;
-
-static std::condition_variable newGoal;      /*!< TODO */
-static std::condition_variable buildGoal;
-static std::condition_variable constructionComplete;
+static std::mutex              GoalAccess;  /*!< A mutex that locks access/waits for a goal to be set */
+static std::condition_variable NewGoal;     /*!< Used to wait on a goal set by user */
 
 Simulator::Simulator(ros::NodeHandle nh, TWorldInfoBuffer &buffer):
   buffer_(buffer), nh_(nh), it_(nh)
 {
   path_     = nh_.advertise<geometry_msgs::PoseArray>("path", 1);
   overlay_  = it_.advertise("prm", 1);
-
   reqGoal_ = nh_.advertiseService("request_goal", &Simulator::requestGoal, this);
 
   //Get parameters from command line
@@ -54,85 +53,32 @@ Simulator::Simulator(ros::NodeHandle nh, TWorldInfoBuffer &buffer):
   ROS_INFO("Init with: map_size={%.1f} resolution={%.1f} robot_diameter={%.1f}",
            mapSize, mapResolution, robotDiameter_);
 
-  gmap_ = PrmPlanner(mapSize, mapResolution);
+  planner_ = PrmPlanner(mapSize, mapResolution);
 }
 
-//void Simulator::queryThread(){
-//  //We must wait until information about the world has been recieved
-//  //so that we can begin building the prm
-//  while(ros::ok()){
-//    int mapSz, poseSz;
-//    buffer_.access.lock();
-//    mapSz = buffer_.ogMapDeq.size();
-//    poseSz = buffer_.poseDeq.size();
-//    buffer_.access.unlock();
 
-//    if(mapSz > 0 && poseSz > 0){
-//      break;
-//    }
-//  }
-
-//  ROS_INFO("Ready to recieve requests...");
-//  std::unique_lock<std::mutex> lock1(goalAccess);
-//  std::unique_lock<std::mutex> lock2(construction);
-
-//  while(ros::ok()){
-//    newGoal.wait(lock1);
-//    TGlobalOrd goal = currentGoal_;
-
-//    buildGoal.notify_one();
-
-//    std::vector<TGlobalOrd> path;
-
-//    int cnt(0);
-//    while(++cnt < 5){
-//      constructionComplete.wait(lock2);
-
-//      path = gmap_.query(cspace, stat)
-
-//    }
-
-
-
-//  }
-
-//}
-
-
-
-void Simulator::prmThread() {
+void Simulator::plannerThread() {
   cv::Mat ogMap;
   geometry_msgs::Pose robotPos;
 
-  //We must wait until information about the world has been recieved
-  //so that we can begin building the prm
-  while(ros::ok()){
-    int mapSz, poseSz;
-    buffer_.access.lock();
-    mapSz = buffer_.ogMapDeq.size();
-    poseSz = buffer_.poseDeq.size();
-    buffer_.access.unlock();
-
-    if(mapSz > 0 && poseSz > 0){
-      break;
-    }
-  }
+  //Wait until some data has arrived in the world information buffer
+  waitForWorldData();
 
   ROS_INFO("Ready to recieve requests...");
-  std::unique_lock<std::mutex> lock(goalAccess);
+  std::unique_lock<std::mutex> lock(GoalAccess);
 
   while(ros::ok()){
     //Wait until a new goal has been recieved
-    newGoal.wait(lock);
-    TGlobalOrd goal = currentGoal_;
+    NewGoal.wait(lock);
+    TGlobalOrd currentGoal = goal_;
 
     //Recieve new information from the world buffer
-    consumeWorldInformation(ogMap, robotPos);
+    consumeWorldData(ogMap, robotPos);
 
     //Update the reference for the localMap
     TGlobalOrd robotOrd = {robotPos.position.x, robotPos.position.y};
     ROS_INFO("Setting reference: {%.1f, %.1f}", robotOrd.x, robotOrd.y);
-    gmap_.setReference(robotOrd);
+    planner_.setReference(robotOrd);
 
     if(ogMap.empty()){
       //Something has gone wrong during image transmission,
@@ -147,31 +93,30 @@ void Simulator::prmThread() {
     cv::cvtColor(ogMap, colourMap, CV_GRAY2BGR);
 
     //Expand the configuration space
-    gmap_.expandConfigSpace(ogMap, robotDiameter_);
-
+    planner_.expandConfigSpace(ogMap, robotDiameter_);
 
     //Validate both ordinates
-    if(!gmap_.ordinateAccessible(ogMap, robotOrd)){
+    if(!planner_.ordinateAccessible(ogMap, robotOrd)){
       ROS_ERROR(" Robot ordinates {%.1f, %.1f} are not accessible",
                 robotOrd.x, robotOrd.y);
       continue;
     }
 
-    if(!gmap_.ordinateAccessible(ogMap, goal)){
+    if(!planner_.ordinateAccessible(ogMap, currentGoal)){
       ROS_ERROR(" Goal ordinates {%.1f, %.1f} are not accessible",
-                goal.x, goal.y);
+                currentGoal.x, currentGoal.y);
       continue;
     }
 
     //Start the build process
     ROS_INFO("Starting build: {%.1f, %.1f} to {%.1f, %.1f}",
-             robotOrd.x, robotOrd.y, goal.x, goal.y);
+             robotOrd.x, robotOrd.y, currentGoal.x, currentGoal.y);
 
     int cnt = 0;
     std::vector<TGlobalOrd> path;
     while(path.size() == 0){
       ROS_INFO("  Building nodes...");
-      path = gmap_.build(ogMap, robotOrd, goal);
+      path = planner_.build(ogMap, robotOrd, currentGoal);
 
       if(cnt++ > 10){
         ROS_INFO("  Finding a path was more difficult than expected...");
@@ -181,28 +126,44 @@ void Simulator::prmThread() {
 
     //Send infomration
     sendOverlay(colourMap, path);
+
+    //Send path
     sendPath(path);
   }
 }
 
+void Simulator::waitForWorldData(){
+  //We must wait until information about the world has been recieved
+  //so that we can begin building the prm
+  while(ros::ok()){
+    int mapSz, poseSz;
+    buffer_.access.lock();
+    mapSz = buffer_.ogMapDeq.size();
+    poseSz = buffer_.poseDeq.size();
+    buffer_.access.unlock();
+
+    if(mapSz > 0 && poseSz > 0){
+      break;
+    }
+  }
+}
 
 bool Simulator::requestGoal(prm_sim::RequestGoal::Request &req, prm_sim::RequestGoal::Response &res)
 {
   ROS_INFO("Goal request: x=%.1f, y=%.1f", (double)req.x, (double)req.y);
 
   //TODO: Check if Goal is within map space??
-  //TODO: GOAL MUST BE FLOATING POINT
-  currentGoal_.x = req.x;
-  currentGoal_.y = req.y;
+  goal_.x = req.x;
+  goal_.y = req.y;
 
-  newGoal.notify_one();
+  NewGoal.notify_one();
   res.ack = true;
 
   ROS_INFO("sending back response: [%d]", res.ack);
   return true;
 }
 
-void Simulator::consumeWorldInformation(cv::Mat &ogMap, geometry_msgs::Pose &robotPos){
+void Simulator::consumeWorldData(cv::Mat &ogMap, geometry_msgs::Pose &robotPos){
   //Get information about the world if available
   buffer_.access.lock();
   if(buffer_.ogMapDeq.size() > 0){
@@ -219,7 +180,7 @@ void Simulator::consumeWorldInformation(cv::Mat &ogMap, geometry_msgs::Pose &rob
 
 void Simulator::sendOverlay(cv::Mat &colourMap, std::vector<TGlobalOrd> path){
   //Show the overlay of the prm
-  gmap_.showOverlay(colourMap, path);
+  planner_.showOverlay(colourMap, path);
 
   sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colourMap).toImageMsg();
   overlay_.publish(msg);

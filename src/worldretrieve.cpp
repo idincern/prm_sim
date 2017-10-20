@@ -63,7 +63,6 @@ void WorldRetrieve::odomCallBack(const nav_msgs::OdometryConstPtr &msg){
 
     firstCallBack = false;
   }
-
 }
 
 void WorldRetrieve::ogMapCallBack(const sensor_msgs::ImageConstPtr &msg){
@@ -72,13 +71,12 @@ void WorldRetrieve::ogMapCallBack(const sensor_msgs::ImageConstPtr &msg){
   try
   {
     if (enc::isColor(msg->encoding)){
-      //Enforce grey images on queue
-      ROS_ERROR("Expected greyscale image...");
-      cvPtr = cv_bridge::toCvCopy(msg, enc::MONO8);
+     ROS_ERROR("Expected greyscale image...");
+     cvPtr = cv_bridge::toCvCopy(msg, enc::MONO8);
+    } else {
+     cvPtr = cv_bridge::toCvCopy(msg, enc::MONO8);
     }
-    else {
-      cvPtr = cv_bridge::toCvCopy(msg, enc::MONO8);
-    }
+
   }
   catch (cv_bridge::Exception& e)
   {

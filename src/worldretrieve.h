@@ -27,7 +27,8 @@ public:
    */
   WorldRetrieve(ros::NodeHandle nh, TWorldInfoBuffer &buffer);
 
-  //A fairly dumb thread, just indicates its listening
+  /*! @brief Display's a heartbeat message every minute.
+   */
   void heartbeatThread(void);
 
 private:
@@ -36,9 +37,28 @@ private:
   image_transport::Subscriber ogmap_; /*!< A subscription to the /map_image/full topic */
   TWorldInfoBuffer &buffer_;          /*!< A shared global structure to update with world information */
 
-  //TODO: Descriptions!
+  /*! @brief Call back for receiving robot poses.
+   *
+   *  Upon triger, this function will put the robot's pose into the internal
+   *  buffer for consumption by another thread. it is important to note
+   *  that old data in the buffer will be overwritten if not consumed
+   *  in a timely manner.
+   *
+   *  @param msg A ros msg containing the pose.
+   */
   void odomCallBack(const nav_msgs::OdometryConstPtr &msg);
 
+  /*! @brief Call back for receiving ogmap images.
+   *
+   *  Upon triger, this function will put an image into the internal
+   *  buffer for consumption by another thread. it is important to note
+   *  that old data in the buffer will be overwritten if not consumed
+   *  in a timely manner.
+   *
+   *  @param msg A ros msg containing the ogmap.
+   *
+   *  @note Colour images will be converted to greyscale.
+   */
   void ogMapCallBack(const sensor_msgs::ImageConstPtr &msg);
 
 };
