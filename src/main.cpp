@@ -21,13 +21,14 @@ int main(int argc, char **argv) {
   ros::NodeHandle nh;
 
   //Lets create a shared pointer to the WorldInfoBuffer
+  //It is populated by WorldRetrieve, and consumed by Simulator
   TWorldInfoBuffer buffer;
 
   std::shared_ptr<WorldRetrieve> wr(new WorldRetrieve(nh, buffer));
   std::shared_ptr<Simulator> sim(new Simulator(nh, buffer));
 
   std::thread t1(&WorldRetrieve::heartbeatThread, wr);
-  std::thread t2(&Simulator::prmThread, sim);
+  std::thread t2(&Simulator::plannerThread, sim);
 
   /**
    * ros::spin() will enter a loop, pumping callbacks.  With this version, all

@@ -405,9 +405,9 @@ void PrmPlanner::expandConfigSpace(cv::Mat &space, double robotDiameter){
   lmap_.expandConfigSpace(space, robotDiameter);
 }
 
-double PrmPlanner::distance(TGlobalOrd p1, TGlobalOrd p2){
-  double a = std::abs(p2.x - p1.x);
-  double b = std::abs(p2.y - p1.y);
+double PrmPlanner::distance(TGlobalOrd o1, TGlobalOrd o2){
+  double a = std::abs(o2.x - o1.x);
+  double b = std::abs(o2.y - o1.y);
 
   return std::sqrt(std::pow(a, 2) + std::pow(b, 2));
 }

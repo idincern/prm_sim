@@ -235,11 +235,11 @@ private:
 
   /*! @brief Calculates the euclidean distance between two ordiantes.
    *
-   *  @param p1 The first point.
-   *  @param p2 The second point
-   *  @return double - The distance between the two points.
+   *  @param p1 The first ordinate.
+   *  @param p2 The second ordinate.
+   *  @return double - The distance between the two ordiantes.
    */
-  static double distance(TGlobalOrd p1, TGlobalOrd p2);
+  static double distance(TGlobalOrd o1, TGlobalOrd o2);
 
   /*! @brief Adds ordiante to the internal graph/network.
    *
