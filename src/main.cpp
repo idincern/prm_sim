@@ -34,6 +34,8 @@ int main(int argc, char **argv) {
    */
   ros::NodeHandle nh;
 
+  std::vector<std::thread> threads;
+
   //Lets create a shared pointer to the WorldDataBuffer
   //It is populated by WorldRetrieve, and consumed by Simulator
   TWorldDataBuffer buffer;
@@ -41,9 +43,9 @@ int main(int argc, char **argv) {
   std::shared_ptr<WorldRetrieve> wr(new WorldRetrieve(nh, buffer));
   std::shared_ptr<Simulator> sim(new Simulator(nh, buffer));
 
-  std::thread t1(&WorldRetrieve::heartbeatThread, wr);
-  std::thread t2(&Simulator::plannerThread, sim);
-  std::thread t3(&Simulator::overlayThread, sim);
+  threads.push_back(std::thread(&WorldRetrieve::heartbeatThread, wr));
+  threads.push_back(std::thread(&Simulator::plannerThread, sim));
+  threads.push_back(std::thread(&Simulator::overlayThread, sim));
 
   /**
    * ros::spin() will enter a loop, pumping callbacks.  With this version, all
@@ -70,9 +72,11 @@ int main(int argc, char **argv) {
 
   //TODO: Heartbeat thread
 
-  t1.join();
-  t2.join();
-  t3.join();
+  for(auto & t: threads){
+    t.join();
+  }
+
+
 
   return 0;
 }
