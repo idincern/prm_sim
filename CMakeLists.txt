@@ -150,6 +150,7 @@ add_library(planner src/prmplanner.cpp src/graph.cpp src/localmap.cpp src/types.
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/prm_sim_node.cpp)
+add_executable(${PROJECT_NAME}_image_node src/map_to_image.cpp)
 add_executable(${PROJECT_NAME}_node src/main.cpp src/worldretrieve.cpp src/simulator.cpp)
 
 ## Rename C++ executable without prefix
@@ -167,6 +168,7 @@ add_executable(${PROJECT_NAME}_node src/main.cpp src/worldretrieve.cpp src/simul
 #   ${catkin_LIBRARIES}
 # )
 target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES} planner)
+target_link_libraries(${PROJECT_NAME}_image_node ${catkin_LIBRARIES})
 
 #############
 ## Install ##
@@ -208,7 +210,7 @@ target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES} planner)
 #############
 
 ## Add gtest based cpp test target and link libraries
-catkin_add_gtest(${PROJECT_NAME}-test test/map-tests.cpp)
+catkin_add_gtest(${PROJECT_NAME}-test test/utests.cpp)
 if(TARGET ${PROJECT_NAME}-test)
    target_link_libraries(${PROJECT_NAME}-test ${catkin_LIBRARIES} planner)
 endif()

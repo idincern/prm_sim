@@ -1,0 +1,61 @@
+# 
+# Desc : This is a stage model of the robotics lab in The University of Auckland,New Zealand
+# Authors : Nick Wong, Jui Chun(Jimmy) Peng Hsu
+# Date : 21 July 2008
+#
+
+# defines Pioneer-like robots
+include "pioneer.inc"
+
+# defines 'map' object used for floorplans
+include "map.inc"
+
+# defines sick laser
+include "sick.inc"
+
+# defines the models used in the lab
+include "uoa_robotics_lab_models.inc"
+
+# set the resolution of the underlying raytrace model in meters
+resolution 0.02
+
+interval_sim 100  # simulation timestep in milliseconds
+interval_real 100  # real-time interval between simulation updates in milliseconds 
+
+paused 0
+
+# configure the GUI window
+#size [ 745.000 448.000 ] 
+#center [-7.010 5.960] 
+#rotate [ 0.920 -0.430 ]
+#scale 28.806 
+
+
+# load an environment bitmap
+floorplan
+(
+  name "uoa_robotics_lab"
+  # The actual size of the lab
+  size [6.270 15.700 2.000]
+  pose [0.000 0.000 0.000 0.000]
+  bitmap "bitmaps/uoa_robotics_lab_block.png"
+)
+
+define autorob fancypioneer2dx
+(
+ color "red"
+ fancysicklaser( pose [ 0.040 0.000 0.000 0.000 ] samples 32 ) 
+
+ blinkenlight( pose [ 0.150 0.100 0.000 0.000 ] color "red" )
+ blinkenlight( pose [ 0.150 0.000 0.000 0.000 ] color "green" )
+ blinkenlight( pose [ 0.150 -0.100 0.000  0.000 ] color "blue" )
+)
+
+autorob( pose [0.000 0.000 0.000 0.000] name "r0" )
+
+define cab bigCabin
+(
+)
+
+# A big cabinet used to store robots
+cab(pose [ 2.443 -2.654 0.000 90.0 ])

@@ -2,7 +2,7 @@
 <package>
   <name>prm_sim</name>
   <version>0.0.0</version>
-  <description>Probablistic Road Map simulation</description>
+  <description>Probablistic Road Map Simulatior</description>
   <maintainer email="andrew.pope456@gmail.com">arosspope</maintainer>
   <license>MIT</license>
 
@@ -10,7 +10,6 @@
   <test_depend>gtest</test_depend>
 
   <!-- Use buildtool_depend for build tool packages: -->
-  <buildtool_depend>catkin</buildtool_depend>
   <buildtool_depend>catkin</buildtool_depend>
 
   <!-- Use build_depend for packages you need at compile time: -->

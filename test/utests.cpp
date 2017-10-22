@@ -4,6 +4,8 @@
 #include "../src/graph.h"
 #include "../src/prmplanner.h"
 
+#include <iostream>
+#include <string>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <image_transport/image_transport.h>
 #include <opencv2/highgui/highgui.hpp>
@@ -12,8 +14,8 @@
 #include <utility>
 #include <vector>
 
-#define SHOW_PRM true
-#define MAX_TRIES 10   //TODO: Through command line
+static bool ShowPrm = false;        //Default is false
+static unsigned int MaxTries = 10;  //Default max amount of tries is 10 for prm gen
 
 /* Various opencv images for testing */
 
@@ -107,9 +109,9 @@ cv::Mat passage(void){
   double mapSize = 20.0;
   double res = 0.1;
   int pixels = (int) mapSize / res;
-  
+
   cv::Mat image(pixels, pixels, CV_8UC1, cv::Scalar(255, 255, 255));
-  
+
   bool twoBoxes = true;
 
   for(int i = 0; i < image.rows; i+=10){
@@ -352,23 +354,16 @@ TEST(PrmGen, SimplePath){
   std::vector<TGlobalOrd> path;
 
   int cnt(0);
-  while(path.size() <= 0){
+  while(path.size() <= 0 && cnt < MaxTries){
     path = g.build(map, robot, goal);
 
-    if(cnt++ > MAX_TRIES)
-      break;
-
-    if(SHOW_PRM){
+    if(ShowPrm){
       g.showOverlay(colourMap, path);
       cv::imshow("test", colourMap);
       cv::waitKey(1000);
     }
-  }
 
-  if(SHOW_PRM){
-    g.showOverlay(colourMap, path);
-    cv::imshow("test", colourMap);
-    cv::waitKey(1000);
+    cnt++;
   }
 
   ASSERT_TRUE(path.size() > 0);
@@ -376,7 +371,6 @@ TEST(PrmGen, SimplePath){
 
 TEST(PrmGen, ComplicatedPath){
   //The start and goal locations are much more seperated out
-  //There is a chance that this will fail... TODO: FIX?
   cv::Mat map = partionedMap2();
   cv::Mat colourMap;
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
@@ -390,23 +384,16 @@ TEST(PrmGen, ComplicatedPath){
   std::vector<TGlobalOrd> path;
 
   int cnt(0);
-  while(path.size() <= 0){
+  while(path.size() <= 0 && cnt < MaxTries){
     path = g.build(map, start, goal);
 
-    if(cnt++ > MAX_TRIES)
-      break;
-
-    if(SHOW_PRM){
+    if(ShowPrm){
       g.showOverlay(colourMap, path);
       cv::imshow("test", colourMap);
       cv::waitKey(1000);
     }
-  }
 
-  if(SHOW_PRM){
-    g.showOverlay(colourMap, path);
-    cv::imshow("test", colourMap);
-    cv::waitKey(1000);
+    cnt++;
   }
 
   ASSERT_TRUE(path.size() > 0);
@@ -426,23 +413,16 @@ TEST(PrmGen, Hallway){
   std::vector<TGlobalOrd> path;
 
   int cnt(0);
-  while(path.size() <= 0){
+  while(path.size() <= 0 && cnt < MaxTries){
     path = g.build(map, start, goal);
 
-    if(cnt++ > MAX_TRIES)
-      break;
-
-    if(SHOW_PRM){
+    if(ShowPrm){
       g.showOverlay(colourMap, path);
       cv::imshow("test", colourMap);
       cv::waitKey(1000);
     }
-  }
 
-  if(SHOW_PRM){
-    g.showOverlay(colourMap, path);
-    cv::imshow("test", colourMap);
-    cv::waitKey(1000);
+    cnt++;
   }
 
   ASSERT_TRUE(path.size() > 0);
@@ -462,23 +442,16 @@ TEST(PrmGen, Pole){
   std::vector<TGlobalOrd> path;
 
   int cnt(0);
-  while(path.size() <= 0){
+  while(path.size() <= 0 && cnt < MaxTries){
     path = g.build(map, start, goal);
 
-    if(cnt++ > MAX_TRIES)
-      break;
-
-    if(SHOW_PRM){
+    if(ShowPrm){
       g.showOverlay(colourMap, path);
       cv::imshow("test", colourMap);
       cv::waitKey(1000);
     }
-  }
 
-  if(SHOW_PRM){
-    g.showOverlay(colourMap, path);
-    cv::imshow("test", colourMap);
-    cv::waitKey(1000);
+    cnt++;
   }
 
   ASSERT_TRUE(path.size() > 0);
@@ -498,23 +471,16 @@ TEST(PrmGen, Passage){
   std::vector<TGlobalOrd> path;
 
   int cnt(0);
-  while(path.size() <= 0){
+  while(path.size() <= 0 && cnt < MaxTries){
     path = g.build(map, start, goal);
 
-    if(cnt++ > MAX_TRIES)
-      break;
-
-    if(SHOW_PRM){
+    if(ShowPrm){
       g.showOverlay(colourMap, path);
       cv::imshow("test", colourMap);
       cv::waitKey(1000);
     }
-  }
 
-  if(SHOW_PRM){
-    g.showOverlay(colourMap, path);
-    cv::imshow("test", colourMap);
-    cv::waitKey(1000);
+    cnt++;
   }
 
   ASSERT_TRUE(path.size() > 0);
@@ -757,14 +723,23 @@ TEST(Graph, RemoveEdge){
   EXPECT_EQ(0, c[0].size());
 }
 
-
-//TODO:Rename this utests
-//TODO: Expect arguments on cmdline to optionally run with images
-//TODO: Test for narrow corridors
 int main (int argc, char **argv){
   //Run with './devel/lib/prm_sim/prm_sim-test' in catkin_ws
   ::testing::InitGoogleTest(&argc, argv);
+
+  for (int i = 1; i < argc; i++) {
+    if (std::string(argv[i]) == "--show") {
+       ShowPrm = true;
+       std::cout << "We did it" << std::endl;
+    } else if (std::string(argv[i]) == "-t") {
+       MaxTries = std::stoi(argv[i + 1]);
+       i++;
+    } else {
+       std::cout << "Invlaid arguments: " << argv[i] << std::endl;
+       std::cout << "Format is `prm_sim-test -t <max_rounds> --show`" << std::endl;
+       return 0;
+    }
+  }
+
   return RUN_ALL_TESTS();
 }
-
-

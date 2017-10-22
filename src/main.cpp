@@ -1,3 +1,17 @@
+/*! @file
+ *
+ *  @brief Main program.
+ *
+ *  TODO
+ *
+ *  @author arosspope
+ *  @date 11-09-2017
+*/
+/*!
+ *  @addtogroup Main_module Main module documentation.
+ *  @{
+*/
+/* MODULE main */
 #include "ros/ros.h"
 
 #include "simulator.h"
@@ -11,7 +25,7 @@ int main(int argc, char **argv) {
    * The ros::init() function needs to see argc and argv so that it can perform
    * any ROS arguments and name remapping that were provided at the command line.
    */
-  ros::init(argc, argv, "prm_sim");
+  ros::init(argc, argv, "prm_sim_node");
 
   /**
    * NodeHandle is the main access point to communications with the ROS system.
@@ -46,8 +60,13 @@ int main(int argc, char **argv) {
   //TODO: work out what to do when SIGINT is recieved in threads.
   //TODO: check correct data on /path topic.
   //TODO: README
-  //TODO: Bring in files from a3_help
-  //TODO: Write script to open terminals
+
+  //TODO: Should I expand configuration space of unknown areas?
+  //      If so, this creates the non-ideal case on startup when the
+  //      is sitting in unknown space after expansion.
+
+  //TODO: Moving the robot before requesting a goal seems to crash the simulator
+  //      when a goal is requested... will need to investigate.
 
   t1.join();
   t2.join();
@@ -55,6 +74,6 @@ int main(int argc, char **argv) {
 
   return 0;
 }
-
-
-
+/*!
+** @}
+*/
