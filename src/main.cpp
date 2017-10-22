@@ -2,10 +2,16 @@
  *
  *  @brief Main program.
  *
- *  TODO
+ *  A probabilistic roadmap planner is a motion-planning algorithm in robotics,
+ *  which solves the problem of determining a path between a starting and a goal
+ *  configuration of the robot while avoiding collisions.
+ *
+ *  The basic idea behind PRM is to take random samples from the configuration
+ *  space of the robot, checking if they are in free space, then attempting to
+ *  connect configurations (groups of samples) to other nearby configurations.
  *
  *  @author arosspope
- *  @date 11-09-2017
+ *  @date 23-10-2017
 */
 /*!
  *  @addtogroup Main_module Main module documentation.
