@@ -59,7 +59,6 @@ int main(int argc, char **argv) {
 
   //TODO: work out what to do when SIGINT is recieved in threads.
   //TODO: check correct data on /path topic.
-  //TODO: README
 
   //TODO: Should I expand configuration space of unknown areas?
   //      If so, this creates the non-ideal case on startup when the

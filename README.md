@@ -39,6 +39,8 @@ To find a path from the robot's position to a given goal, the following service 
 
 When first building the project, run `catkin_make -j1` (in the catkin workspace) to auto-generate the src from the srv file. After that initial build, calls to `catkin_make` will suffice.
 
+//TODO: Installation instructions
+
 ## Testing
 
 This project also comes with a series of unit tests that are run on a gtest framework. To build these tests run `catkin_make tests` from the catkin workspace. To run these tests simply run `./devel/lib/prm_sim/prm_sim-test` from the catkin workspace.
