@@ -2,7 +2,10 @@
  *
  *  @brief Routines for obtaining information about a local map.
  *
- *  TODO: Better description?
+ *  This class is primarily used to query the configuration space
+ *  of a robot. This configuration space is an openCV image, where
+ *  white pixels denote free space, black pixels denote occupied space,
+ *  and grey pixels denote unknown space.
  *
  *  @author arosspope
  *  @date 12-10-2017

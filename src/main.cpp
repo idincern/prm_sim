@@ -34,9 +34,9 @@ int main(int argc, char **argv) {
    */
   ros::NodeHandle nh;
 
-  //Lets create a shared pointer to the WorldInfoBuffer
+  //Lets create a shared pointer to the WorldDataBuffer
   //It is populated by WorldRetrieve, and consumed by Simulator
-  TWorldInfoBuffer buffer;
+  TWorldDataBuffer buffer;
 
   std::shared_ptr<WorldRetrieve> wr(new WorldRetrieve(nh, buffer));
   std::shared_ptr<Simulator> sim(new Simulator(nh, buffer));
@@ -58,6 +58,7 @@ int main(int argc, char **argv) {
   ros::shutdown();
 
   //TODO: work out what to do when SIGINT is recieved in threads.
+
   //TODO: check correct data on /path topic.
 
   //TODO: Should I expand configuration space of unknown areas?
@@ -66,6 +67,8 @@ int main(int argc, char **argv) {
 
   //TODO: Moving the robot before requesting a goal seems to crash the simulator
   //      when a goal is requested... will need to investigate.
+
+  //TODO: Heartbeat thread
 
   t1.join();
   t2.join();

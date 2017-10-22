@@ -35,10 +35,10 @@ public:
   /*! @brief Constructor for Simulator.
    *
    *  @param nh The handle of the ros node using this class
-   *  @param buffer A reference to a shared world information buffer. This buffer should
+   *  @param buffer A reference to a shared world data buffer. This buffer should
    *                be populated by another thread.
    */
-  Simulator(ros::NodeHandle nh, TWorldInfoBuffer &buffer);
+  Simulator(ros::NodeHandle nh, TWorldDataBuffer &buffer);
 
   /*! @brief Creates a path between robot and goal using PRM planner.
    *
@@ -63,7 +63,7 @@ private:
   image_transport::Publisher overlayPub_;   /*!< Publishes an overlay of the prm on top of the OgMap to /prm */
   ros::Publisher pathPub_;                  /*!< Publishes the path between robot and goal on /path */
 
-  TWorldInfoBuffer &buffer_;                /*!< A shared global structure that gets updated with world information */
+  TWorldDataBuffer &buffer_;                /*!< A shared global structure that gets updated with world information */
   PrmPlanner planner_;                      /*!< The LD-PRM planner for path finding */
 
   double robotDiameter_;                    /*!< Diameter of the robot in meters */

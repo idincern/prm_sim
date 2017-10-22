@@ -20,7 +20,7 @@
 
 namespace enc = sensor_msgs::image_encodings;
 
-WorldRetrieve::WorldRetrieve(ros::NodeHandle nh, TWorldInfoBuffer &buffer):
+WorldRetrieve::WorldRetrieve(ros::NodeHandle nh, TWorldDataBuffer &buffer):
   buffer_(buffer), nh_(nh)
 {
   odom_ = nh_.subscribe("odom", 1000, &WorldRetrieve::odomCallBack, this);
@@ -31,7 +31,6 @@ WorldRetrieve::WorldRetrieve(ros::NodeHandle nh, TWorldInfoBuffer &buffer):
 
 void WorldRetrieve::heartbeatThread(void){
   while(ros::ok()){
-    //TODO: Necessary???
     //Display a heartbeat message every so often
     ROS_INFO("thump thump...");
     std::this_thread::sleep_for (std::chrono::minutes(1));

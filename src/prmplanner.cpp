@@ -80,7 +80,6 @@ std::vector<TGlobalOrd> PrmPlanner::build(cv::Mat &cspace, TGlobalOrd start, TGl
     std::default_random_engine generator(std::chrono::duration_cast<std::chrono::nanoseconds>
                                          (std::chrono::system_clock::now().time_since_epoch()).count());
 
-    //TODO: Closely examine this...
     double mapSize = lmap_.getMapSize();
     std::uniform_real_distribution<double> xDist(reference_.x - (mapSize/2), reference_.x + (mapSize/2));
     std::uniform_real_distribution<double> yDist(reference_.y - (mapSize/2), reference_.y + (mapSize/2));

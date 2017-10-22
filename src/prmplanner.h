@@ -117,7 +117,7 @@ private:
   Graph graph_;                             /*!< A graph representation of the roadmap network */
   LocalMap lmap_;                           /*!< An object for interacting with the ogMap provided to this object */
   std::map<vertex, TGlobalOrd> network_;    /*!< A look up table to convert a vertex to coordinate within map */
-  vertex nextVertexId_;                     /*!< Used for generating unique vertex ids for coordiantes... TODO: make atomic?? */
+  vertex nextVertexId_;                     /*!< Used for generating unique vertex ids for coordiantes */
   TGlobalOrd reference_;                    /*!< Reference ordinate for the local map, this is usually the robot position */
 
   /*! @brief Optimises a path between two points in a config space.

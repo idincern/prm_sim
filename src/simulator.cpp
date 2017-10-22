@@ -21,21 +21,16 @@
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <algorithm>
-#include <limits>
-#include <string>
-
-//TODO: Examine header file...
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
-#include <signal.h>
 
 namespace enc = sensor_msgs::image_encodings;
 
 static std::mutex              GoalAccess;  /*!< A mutex that locks access/waits for a goal to be set */
 static std::condition_variable NewGoal;     /*!< Used to wait on a goal set by user */
 
-Simulator::Simulator(ros::NodeHandle nh, TWorldInfoBuffer &buffer):
+Simulator::Simulator(ros::NodeHandle nh, TWorldDataBuffer &buffer):
   buffer_(buffer), nh_(nh), it_(nh)
 {
   pathPub_     = nh_.advertise<geometry_msgs::PoseArray>("path", 1);

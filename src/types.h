@@ -24,8 +24,7 @@ struct TGlobalOrd
   }
 };
 
-//TODO: Check naming conventions....
-struct TWorldInfoBuffer
+struct TWorldDataBuffer
 {
   std::deque<geometry_msgs::Pose> poseDeq;
   std::deque<cv::Mat> ogMapDeq;

@@ -77,7 +77,6 @@ public:
    */
   std::map<vertex, edges> container() const;
 
-  //TODO: CHECK IF WE NEED....
   /*! @brief Remove a vertex from the graph.
    *
    *  @return TRUE - If vertex was successfully removed.

@@ -23,9 +23,9 @@ public:
   /*! @brief Constructor for WorldRetrieve.
    *
    *  @param nh The handle of the ros node using this class
-   *  @param buffer A reference to a shared world information buffer
+   *  @param buffer A reference to a shared world data buffer
    */
-  WorldRetrieve(ros::NodeHandle nh, TWorldInfoBuffer &buffer);
+  WorldRetrieve(ros::NodeHandle nh, TWorldDataBuffer &buffer);
 
   /*! @brief Display's a heartbeat message every minute.
    */
@@ -35,7 +35,7 @@ private:
   ros::NodeHandle nh_;                /*!< The handle of the ros node using this class */
   ros::Subscriber odom_;              /*!< A subscription to the /odom topic */
   image_transport::Subscriber ogmap_; /*!< A subscription to the /map_image/full topic */
-  TWorldInfoBuffer &buffer_;          /*!< A shared global structure to update with world information */
+  TWorldDataBuffer &buffer_;          /*!< A shared global structure to update with world information */
 
   /*! @brief Call back for receiving robot poses.
    *
