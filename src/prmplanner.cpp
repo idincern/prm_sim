@@ -22,24 +22,22 @@
 #include <thread>
 #include <chrono>
 
-static const unsigned int MaxGraphDensity = 5;  /*!< The max amount of neighbours a vertex in the graph can have */
-static const double DefaultMapSize = 20.0;      /*!< The default ogmap size is 20x20m */
-static const double DefaultfResolution = 0.1;   /*!< The default ogmap resolution is 0.1 */
-
 PrmPlanner::PrmPlanner():
-  graph_(Graph(MaxGraphDensity)), lmap_(LocalMap(DefaultMapSize, DefaultfResolution))
+  graph_(Graph(PLANNER_DEF_DENSITY)), lmap_(LocalMap(PLANNER_DEF_MAP_SIZE, PLANNER_DEF_MAP_RES))
 {
   nextVertexId_ = 0;
   reference_.x = 0;
   reference_.y = 0;
+  density_ = PLANNER_DEF_DENSITY;
 }
 
-PrmPlanner::PrmPlanner(double mapSize, double mapRes):
-  graph_(Graph(MaxGraphDensity)), lmap_(LocalMap(mapSize, mapRes))
+PrmPlanner::PrmPlanner(double mapSize, double mapRes, unsigned int density):
+  graph_(Graph(density)), lmap_(LocalMap(mapSize, mapRes))
 {
   nextVertexId_ = 0;
   reference_.x = 0;
   reference_.y = 0;
+  density_ = density;
 }
 
 std::vector<TGlobalOrd> PrmPlanner::build(cv::Mat &cspace, TGlobalOrd start, TGlobalOrd goal)
@@ -104,9 +102,9 @@ std::vector<TGlobalOrd> PrmPlanner::build(cv::Mat &cspace, TGlobalOrd start, TGl
   }
 
   //Attempt to connect start and goal continously
-  embedNode(cspace, vStart, MaxGraphDensity, true);
-  embedNode(cspace, vGoal, MaxGraphDensity, true);
-  joinNetwork(cspace, MaxGraphDensity);
+  embedNode(cspace, vStart, density_, true);
+  embedNode(cspace, vGoal, density_, true);
+  joinNetwork(cspace, density_);
 
   return query(cspace, start, goal);
 }

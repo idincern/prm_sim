@@ -25,6 +25,10 @@
 #include "graph.h"
 #include "types.h"
 
+//PrmPlanner default constants
+const double PLANNER_DEF_MAP_SIZE = 20.0;   /*!< The default ogmap size is 20x20m */
+const double PLANNER_DEF_MAP_RES = 0.1;     /*!< The default ogmap resolution is 0.1m per pixel */
+const unsigned int PLANNER_DEF_DENSITY = 5; /*!< The default max amount of neighbours a node in the network can have */
 
 class PrmPlanner
 {
@@ -37,11 +41,12 @@ public:
    *
    *  @param mapSize The size of the OgMap in meters (square maps only).
    *  @param res The resolution of the OgMaps provided to this object.
+   *  @param density The density of the prm network (max neighbours a node can have).
    *
    *  @note This will set the reference position to 0,0 by default. To change this,
    *        call setReference().
    */
-  PrmPlanner(double mapSize, double mapRes);
+  PrmPlanner(double mapSize, double mapRes, unsigned int density);
 
   /*! @brief Builds a prm network between a start and end ordinate.
    *
@@ -119,6 +124,7 @@ private:
   std::map<vertex, TGlobalOrd> network_;    /*!< A look up table to convert a vertex to coordinate within map */
   vertex nextVertexId_;                     /*!< Used for generating unique vertex ids for coordiantes */
   TGlobalOrd reference_;                    /*!< Reference ordinate for the local map, this is usually the robot position */
+  unsigned int density_;                    /*!< The density of the prm network (max neighbours a node can have). */
 
   /*! @brief Optimises a path between two points in a config space.
    *

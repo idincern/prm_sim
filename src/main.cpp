@@ -10,6 +10,14 @@
  *  space of the robot, checking if they are in free space, then attempting to
  *  connect configurations (groups of samples) to other nearby configurations.
  *
+ *  When starting the prm_sim_node (using rosrun), the following parameters may
+ *  be specified.
+ *
+ *  - _map_size:=<size of supplied ogMap in meters>
+ *  - _resolution:=<resolution of the opencv map image>
+ *  - _density:=<max density the prm network can have>
+ *  - _robot_diameter:=<the diameter of the robot in meters>
+ *
  *  @author arosspope
  *  @date 23-10-2017
 */
@@ -72,9 +80,6 @@ int main(int argc, char **argv) {
   //TODO: Should I expand configuration space of unknown areas?
   //      If so, this creates the non-ideal case on startup when the
   //      is sitting in unknown space after expansion.
-
-  //TODO: Moving the robot before requesting a goal seems to crash the simulator
-  //      when a goal is requested... will need to investigate.
 
   //TODO: Heartbeat thread
 

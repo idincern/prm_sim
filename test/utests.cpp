@@ -346,7 +346,7 @@ TEST(PrmGen, SimplePath){
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
   TGlobalOrd robot{10, 10}, goal{15, 15}, start{5,5};
-  PrmPlanner g(20.0, 0.1);
+  PrmPlanner g;
 
   g.setReference(robot);
   g.expandConfigSpace(map, 0.2);
@@ -376,7 +376,7 @@ TEST(PrmGen, ComplicatedPath){
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
   TGlobalOrd robot{10, 10}, start{1, 1}, goal{10, 19};
-  PrmPlanner g(20.0, 0.1);
+  PrmPlanner g;
 
   g.setReference(robot);
   g.expandConfigSpace(map, 0.2);
@@ -405,7 +405,7 @@ TEST(PrmGen, Hallway){
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
   TGlobalOrd robot{10, 10}, start{4, 2}, goal{19, 14};
-  PrmPlanner g(20.0, 0.1);
+  PrmPlanner g;
 
   g.setReference(robot);
   g.expandConfigSpace(map, 0.2);
@@ -434,7 +434,7 @@ TEST(PrmGen, Pole){
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
   TGlobalOrd robot{10, 10}, start{1, 1}, goal{19, 19};
-  PrmPlanner g(20.0, 0.1);
+  PrmPlanner g;
 
   g.setReference(robot);
   g.expandConfigSpace(map, 0.2);
@@ -463,7 +463,7 @@ TEST(PrmGen, Passage){
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
   TGlobalOrd robot{10, 10}, start{1, 1}, goal{19, 19};
-  PrmPlanner g(20.0, 0.1);
+  PrmPlanner g;
 
   g.setReference(robot);
   g.expandConfigSpace(map, 0.2);
@@ -492,7 +492,7 @@ TEST(PrmGen, NoPath){
   cv::Mat colourMap;
   cv::cvtColor(map, colourMap, CV_GRAY2BGR);
 
-  PrmPlanner g(20.0, 0.1);
+  PrmPlanner g;
   TGlobalOrd robot{10, 10}, start{1, 5}, goal{10, 19};
   g.setReference(robot);
   g.expandConfigSpace(map, 0.2);

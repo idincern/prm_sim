@@ -26,9 +26,10 @@
 #include <atomic>
 
 namespace enc = sensor_msgs::image_encodings;
+static const double DEF_ROBOT_DIAMETER = 0.2; /*!< Default robot diameter is 0.2m */
 
-static std::mutex              GoalAccess;  /*!< A mutex that locks access/waits for a goal to be set */
-static std::condition_variable NewGoal;     /*!< Used to wait on a goal set by user */
+static std::mutex              GoalAccess;    /*!< A mutex that locks access/waits for a goal to be set */
+static std::condition_variable NewGoal;       /*!< Used to wait on a goal set by user */
 
 Simulator::Simulator(ros::NodeHandle nh, TWorldDataBuffer &buffer):
   buffer_(buffer), nh_(nh), it_(nh)
@@ -41,14 +42,17 @@ Simulator::Simulator(ros::NodeHandle nh, TWorldDataBuffer &buffer):
   ros::NodeHandle pn("~");
   double mapSize;
   double mapResolution;
-  pn.param<double>("map_size", mapSize, 20.0);
-  pn.param<double>("resolution", mapResolution, 0.1);
-  pn.param<double>("robot_diameter", robotDiameter_, 0.2);
+  int density;
 
-  ROS_INFO("Init with: map_size={%.1f} resolution={%.1f} robot_diameter={%.1f}",
-           mapSize, mapResolution, robotDiameter_);
+  pn.param<double>("map_size", mapSize, PLANNER_DEF_MAP_SIZE);
+  pn.param<double>("resolution", mapResolution, PLANNER_DEF_MAP_RES);
+  pn.param<int>("density", density, PLANNER_DEF_DENSITY);
+  pn.param<double>("robot_diameter", robotDiameter_, DEF_ROBOT_DIAMETER);
 
-  planner_ = PrmPlanner(mapSize, mapResolution);
+  ROS_INFO("Init with: map_size={%.1f} resolution={%.1f} robot_diameter={%.1f} density={%d}",
+           mapSize, mapResolution, robotDiameter_, density);
+
+  planner_ = PrmPlanner(mapSize, mapResolution, density);
 }
 
 void Simulator::overlayThread(){
