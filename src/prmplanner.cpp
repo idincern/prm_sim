@@ -59,14 +59,13 @@ std::vector<TGlobalOrd> PrmPlanner::build(cv::Mat &cspace, TGlobalOrd start, TGl
     return path;
   }
 
-  //Find or add a vertex for start/goal and attempt to connect
-  //to at least one close neighbour before starting the main build process
+  //It's important that the start/goal are embeded to at least one other
+  //node in the network, otherwise there is a chance the start and goal
+  //don't become connected as the map becomes denser with nodes
   vStart = findOrAdd(start);
   vGoal = findOrAdd(goal);
-
-  //TODO: If we decided to embed the nodes first then we could also check for a path again.
-  //embedNode(cspace, vStart, 1, true);
-  //embedNode(cspace, vGoal, 1, true);
+  embedNode(cspace, vStart, 1, true);
+  embedNode(cspace, vGoal, 1, true);
 
   //Calculate seperation radius
   unsigned int numNodes = network_.size() + 200;
@@ -109,14 +108,7 @@ std::vector<TGlobalOrd> PrmPlanner::build(cv::Mat &cspace, TGlobalOrd start, TGl
   embedNode(cspace, vGoal, MaxGraphDensity, true);
   joinNetwork(cspace, MaxGraphDensity);
 
-  //Find a path and optimise it.
-  vPath = graph_.shortestPath(vStart, vGoal);
-
-  if(vPath.size() > 0){
-    return optimisePath(cspace, toOrdPath(vPath));
-  }
-
-  return path;
+  return query(cspace, start, goal);
 }
 
 std::vector<TGlobalOrd> PrmPlanner::query(cv::Mat &cspace, TGlobalOrd start, TGlobalOrd goal){
