@@ -67,7 +67,8 @@ void Simulator::overlayThread(){
       ROS_INFO("Updating PRM overlay...");
     }
 
-    sendOverlay(msg);
+    if(!msg.empty())
+      sendOverlay(msg);
   }
 }
 
@@ -175,8 +176,7 @@ bool Simulator::requestGoal(prm_sim::RequestGoal::Request &req, prm_sim::Request
 
   NewGoal.notify_one();
 
-  //Note: this cspace might be using old data...
-  res.ack = planner_.ordinateAccessible(cspace_, goal_);
+  res.ack = true;
 
   ROS_INFO("Sending back goal response: [%d]", res.ack);
   return true;
@@ -207,8 +207,7 @@ void Simulator::sendPath(std::vector<TGlobalOrd> path){
   if(path.size() > 0){
     //Send the waypoints
     geometry_msgs::PoseArray posePath;
-    for(auto const &waypoint: path)
-    {
+    for(auto const &waypoint: path) {
       geometry_msgs::Pose w;
       w.position.x = waypoint.x;
       w.position.y = waypoint.y;

@@ -76,9 +76,8 @@ private:
   /*! @brief Callback function for service /request_goal.
    *
    *  This callback will notify the plannerThread that a new goal has been
-   *  recieved. Even if the goal is invalid (which will be known through a false ack)
-   *  it will still allow the planner thread to potentially update its internal map
-   *  information.
+   *  recieved. Even if the goal is invalid, this request service will return
+   *  true. The error will occur (and be displayed) in the planning thread.
    *
    *  @param req The request containing a goal of type (float, float).
    *  @param res The response sent back. TRUE if goal is accessible.
