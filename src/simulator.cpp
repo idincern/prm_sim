@@ -79,6 +79,7 @@ void Simulator::overlayThread(){
 
 void Simulator::plannerThread() {
   //Wait until some data has arrived in the world information buffer
+  ROS_INFO("Waiting to receive world data...");
   waitForWorldData();
 
   ROS_INFO("Ready to recieve requests...");
