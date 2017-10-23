@@ -24,11 +24,11 @@ struct TGlobalOrd
   }
 };
 
-struct TWorldDataBuffer
+struct TWorldDataBuffer /*!< Used as a container for map information */
 {
-  std::deque<geometry_msgs::Pose> poseDeq;
-  std::deque<cv::Mat> ogMapDeq;
-  std::mutex access;
+  std::deque<geometry_msgs::Pose> poseDeq;  /*!< A queue of robot poses */
+  std::deque<cv::Mat> ogMapDeq;             /*!< A queue of OgMaps */
+  std::mutex access;                        /*!< Mutex to control access to the buffer */
 };
 
 #endif // TYPES

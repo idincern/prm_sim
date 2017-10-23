@@ -108,7 +108,7 @@ void Simulator::plannerThread() {
         continue;
       }
 
-      //Copy to the prm overlay
+      //Copy to the prm overlay before expanding config space
       overlayContainer_.access.lock();
       cv::cvtColor(cspace_, overlayContainer_.data, CV_GRAY2BGR);
       overlayContainer_.access.unlock();
@@ -221,7 +221,7 @@ void Simulator::sendPath(std::vector<TGlobalOrd> path){
       geometry_msgs::Pose w;
       w.position.x = waypoint.x;
       w.position.y = waypoint.y;
-      w.position.z = robotPos_.position.z;
+      w.position.z = robotPos_.position.z; //Just send the z value of the original robot position
 
       posePath.poses.push_back(w);
     }

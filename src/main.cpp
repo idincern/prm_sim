@@ -48,8 +48,7 @@ int main(int argc, char **argv) {
 
   std::vector<std::thread> threads;
 
-  //Lets create a shared pointer to the WorldDataBuffer
-  //It is populated by WorldRetrieve, and consumed by Simulator
+  //The WorldDataBuffer is populated by WorldRetrieve, and consumed by Simulator
   TWorldDataBuffer buffer;
   std::shared_ptr<WorldRetrieve> wr(new WorldRetrieve(nh, buffer));
   std::shared_ptr<Simulator> sim(new Simulator(nh, buffer));
@@ -69,10 +68,7 @@ int main(int argc, char **argv) {
    */
   ros::shutdown();
 
-  //TODO: Behaviour when network becomes really dense
-
-  //TODO: Look for todos
-
+  //Join threads and begin!
   for(auto & t: threads){
     t.join();
   }
