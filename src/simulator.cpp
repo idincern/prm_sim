@@ -63,10 +63,11 @@ void Simulator::overlayThread(){
       //otherwise we retain a reference to it which can change
       //We only want to see change when dirty is set to true
       overlayContainer_.access.lock();
-      overlayContainer_.prmOverlay.copyTo(msg);
-      overlayContainer_.access.unlock();
 
+      overlayContainer_.prmOverlay.copyTo(msg);
       overlayContainer_.dirty = false;
+
+      overlayContainer_.access.unlock();
       ROS_INFO("Updating PRM overlay...");
     }
 
