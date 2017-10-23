@@ -54,10 +54,11 @@ int main(int argc, char **argv) {
   //It is populated by WorldRetrieve, and consumed by Simulator
   TWorldDataBuffer buffer;
 
+  //TODO: Determine what to do with wr
   std::shared_ptr<WorldRetrieve> wr(new WorldRetrieve(nh, buffer));
   std::shared_ptr<Simulator> sim(new Simulator(nh, buffer));
 
-  threads.push_back(std::thread(&WorldRetrieve::heartbeatThread, wr));
+  //threads.push_back(std::thread(&WorldRetrieve::heartbeatThread, wr));
   threads.push_back(std::thread(&Simulator::plannerThread, sim));
   threads.push_back(std::thread(&Simulator::overlayThread, sim));
 
@@ -73,8 +74,6 @@ int main(int argc, char **argv) {
    */
   ros::shutdown();
 
-  //TODO: work out what to do when SIGINT is recieved in threads.
-
   //TODO: check correct data on /path topic.
 
   //TODO: Should I expand configuration space of unknown areas?
@@ -83,11 +82,13 @@ int main(int argc, char **argv) {
 
   //TODO: Heartbeat thread
 
+  //TODO: Behaviour when network becomes really dense
+
+  //TODO: Look for todos
+
   for(auto & t: threads){
     t.join();
   }
-
-
 
   return 0;
 }

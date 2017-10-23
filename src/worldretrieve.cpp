@@ -31,6 +31,8 @@ WorldRetrieve::WorldRetrieve(ros::NodeHandle nh, TWorldDataBuffer &buffer):
 
 void WorldRetrieve::heartbeatThread(void){
   while(ros::ok()){
+    //TODO: Remove if not needed
+
     //Display a heartbeat message every so often
     ROS_INFO("thump thump...");
     std::this_thread::sleep_for (std::chrono::minutes(1));

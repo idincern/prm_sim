@@ -26,10 +26,9 @@
 #include <atomic>
 
 namespace enc = sensor_msgs::image_encodings;
-static const double DEF_ROBOT_DIAMETER = 0.2; /*!< Default robot diameter is 0.2m */
 
-static std::mutex              GoalAccess;    /*!< A mutex that locks access/waits for a goal to be set */
-static std::condition_variable NewGoal;       /*!< Used to wait on a goal set by user */
+static const double DEF_ROBOT_DIAMETER = 0.2; /*!< Default robot diameter is 0.2m */
+static const int MAX_BUILD_ROUNDS = 5;        /*!< The max amount of times the builder is allowed to plan a path towards a goal */
 
 Simulator::Simulator(ros::NodeHandle nh, TWorldDataBuffer &buffer):
   buffer_(buffer), nh_(nh), it_(nh)
@@ -81,78 +80,84 @@ void Simulator::plannerThread() {
   //Wait until some data has arrived in the world information buffer
   ROS_INFO("Waiting to receive world data...");
   waitForWorldData();
-
   ROS_INFO("Ready to recieve requests...");
-  std::unique_lock<std::mutex> lock(GoalAccess);
 
   while(ros::ok()){
-    //Wait until a new goal has been recieved
-    NewGoal.wait(lock);
-    TGlobalOrd currentGoal = goal_; //TODO: Atomic copy?
+    //Only plan if a new goal has been recieved
+    if(goalContainer_.isNew)
+    {
+      //Get the new goal
+      goalContainer_.access.lock();
+      TGlobalOrd currentGoal = goalContainer_.goal;
+      goalContainer_.isNew = false;
+      goalContainer_.access.unlock();
 
-    //Recieve new information from the world buffer
-    consumeWorldData(cspace_, robotPos_);
+      //Recieve new information from the world buffer
+      consumeWorldData(cspace_, robotPos_);
 
-    //Update the reference for the localMap
-    TGlobalOrd robotOrd = {robotPos_.position.x, robotPos_.position.y};
-    ROS_INFO("Setting reference: {%.1f, %.1f}", robotOrd.x, robotOrd.y);
-    planner_.setReference(robotOrd);
+      //Update the reference for the localMap
+      TGlobalOrd robotOrd = {robotPos_.position.x, robotPos_.position.y};
+      ROS_INFO("Setting reference: {%.1f, %.1f}", robotOrd.x, robotOrd.y);
+      planner_.setReference(robotOrd);
 
-    if(cspace_.empty()){
-      //Something has gone wrong during image transmission,
-      //skip execution for this goal and hope new data has arived
-      //on the next go around
-      ROS_ERROR("Empty OgMap");
-      continue;
-    }
+      if(cspace_.empty()){
+        //Something has gone wrong during image transmission,
+        //skip execution for this goal and hope new data has arived
+        //on the next go around
+        ROS_ERROR("Empty OgMap");
+        continue;
+      }
 
-    //Create colour copy of the OgMap
-    cv::Mat colourMap;
-    overlayContainer_.access.lock();
-    cv::cvtColor(cspace_, overlayContainer_.prmOverlay, CV_GRAY2BGR);
-    overlayContainer_.access.unlock();
-
-    //Expand the configuration space
-    //TODO: Examine what cspace is doing...
-    planner_.expandConfigSpace(cspace_, robotDiameter_);
-
-    //Validate both ordinates
-    if(!planner_.ordinateAccessible(cspace_, robotOrd)){
-      ROS_ERROR("Robot ordinates {%.1f, %.1f} are not accessible",
-                robotOrd.x, robotOrd.y);
-      continue;
-    }
-
-    if(!planner_.ordinateAccessible(cspace_, currentGoal)){
-      ROS_ERROR("Goal ordinates {%.1f, %.1f} are not accessible",
-                currentGoal.x, currentGoal.y);
-      continue;
-    }
-
-    //Start the build process
-    ROS_INFO("Starting build: {%.1f, %.1f} to {%.1f, %.1f}",
-             robotOrd.x, robotOrd.y, currentGoal.x, currentGoal.y);
-
-    int cnt = 0;
-    std::vector<TGlobalOrd> path;
-    while(path.size() == 0){
-      ROS_INFO("  Building nodes...");
-      path = planner_.build(cspace_, robotOrd, currentGoal);
-
-      //Update PRM overlay with network and potentially path
+      //Create colour copy of the OgMap
+      cv::Mat colourMap;
       overlayContainer_.access.lock();
-      planner_.showOverlay(overlayContainer_.prmOverlay, path);
+      cv::cvtColor(cspace_, overlayContainer_.prmOverlay, CV_GRAY2BGR);
       overlayContainer_.access.unlock();
-      overlayContainer_.dirty = true;
 
-      if(cnt++ > 6){ //TODO: make number come in on command line...
-        ROS_INFO("  Could not find path. Perhaps choose a closer goal?");
-        break;
+      //Expand the configuration space
+      //TODO: Examine what cspace is doing...
+      planner_.expandConfigSpace(cspace_, robotDiameter_);
+
+      //Validate both ordinates
+      if(!planner_.ordinateAccessible(cspace_, robotOrd)){
+        ROS_ERROR("Robot ordinates {%.1f, %.1f} are not accessible",
+                  robotOrd.x, robotOrd.y);
+        continue;
+      }
+
+      if(!planner_.ordinateAccessible(cspace_, currentGoal)){
+        ROS_ERROR("Goal ordinates {%.1f, %.1f} are not accessible",
+                  currentGoal.x, currentGoal.y);
+        continue;
+      }
+
+      //Start the build process
+      ROS_INFO("Starting build: {%.1f, %.1f} to {%.1f, %.1f}",
+               robotOrd.x, robotOrd.y, currentGoal.x, currentGoal.y);
+
+      std::vector<TGlobalOrd> path;
+      int cnt(0);
+      while(path.size() == 0 && cnt < MAX_BUILD_ROUNDS){
+        ROS_INFO("  Building nodes...");
+        path = planner_.build(cspace_, robotOrd, currentGoal);
+
+        //Update PRM overlay with network and potentially path
+        overlayContainer_.access.lock();
+
+        planner_.showOverlay(overlayContainer_.prmOverlay, path);
+        overlayContainer_.dirty = true;
+
+        overlayContainer_.access.unlock();
+        cnt++;
+      }
+
+      if(path.size() > 0){
+        //Send path information
+        sendPath(path);
+      } else {
+        ROS_WARN("  Could not find path. Perhaps choose a closer goal?");
       }
     }
-
-    //Send path information
-    sendPath(path);
   }
 }
 
@@ -175,11 +180,13 @@ void Simulator::waitForWorldData(){
 bool Simulator::requestGoal(prm_sim::RequestGoal::Request &req, prm_sim::RequestGoal::Response &res)
 {
   ROS_INFO("Goal request: x=%.1f, y=%.1f", (double)req.x, (double)req.y);
+  goalContainer_.access.lock();
 
-  goal_.x = req.x;
-  goal_.y = req.y;
+  goalContainer_.goal.x = req.x;
+  goalContainer_.goal.y = req.y;
+  goalContainer_.isNew = true;
 
-  NewGoal.notify_one();
+  goalContainer_.access.unlock();
 
   res.ack = true;
 

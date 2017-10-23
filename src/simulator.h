@@ -29,6 +29,12 @@ typedef struct {
   std::atomic<bool> dirty{false}; /*!< Atomic boolean to indicate to various threads if the image has changed since last viewing */
 } TOverlayContainer;  /*!< A container to control access to the prm map overlay */
 
+typedef struct {
+  std::mutex access;  /*!< An access mutex to lock this container when the goal is changing */
+  TGlobalOrd goal;    /*!< The goal ordiante */
+  std::atomic<bool> isNew{false}; /*!< Atomic boolean to indicate to various threads if the goal is new */
+} TGoalContainer;     /*!< A container to control access to the goal */
+
 class Simulator
 {
 public:
@@ -67,8 +73,8 @@ private:
   PrmPlanner planner_;                      /*!< The LD-PRM planner for path finding */
 
   double robotDiameter_;                    /*!< Diameter of the robot in meters */
-  TGlobalOrd goal_;                         /*!< The current goal for the robot to reach */
   cv::Mat cspace_;                          /*!< The current configuration space (greyscale) */
+  TGoalContainer goalContainer_;            /*!< The current goal for the robot to reach */
   TOverlayContainer overlayContainer_;      /*!< An image of the last known prm/path overlayed onto the cspace (shared between threads) */
   geometry_msgs::Pose robotPos_;            /*!< The current robot position */
 
