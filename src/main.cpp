@@ -1,6 +1,6 @@
 /*! @file
  *
- *  @brief Main program.
+ *  @brief Entry point for the prm_sim_node.
  *
  *  A probabilistic roadmap planner is a motion-planning algorithm in robotics,
  *  which solves the problem of determining a path between a starting and a goal
@@ -21,11 +21,6 @@
  *  @author arosspope
  *  @date 23-10-2017
 */
-/*!
- *  @addtogroup Main_module Main module documentation.
- *  @{
-*/
-/* MODULE main */
 #include "ros/ros.h"
 
 #include "simulator.h"
@@ -33,39 +28,28 @@
 #include "types.h"
 
 int main(int argc, char **argv) {
-  /**
-   * The ros::init() function needs to see argc and argv so that it can perform
-   * any ROS arguments and name remapping that were provided at the command line.
-   */
   ros::init(argc, argv, "prm_sim_node");
 
-  /**
-   * NodeHandle is the main access point to communications with the ROS system.
-   * The first NodeHandle constructed will fully initialize this node, and the last
-   * NodeHandle destructed will close down the node.
-   */
+  //NodeHandle is the main access point to communications with the ROS system.
   ros::NodeHandle nh;
-
-  std::vector<std::thread> threads;
 
   //The WorldDataBuffer is populated by WorldRetrieve, and consumed by Simulator
   TWorldDataBuffer buffer;
+
+  std::vector<std::thread> threads;
   std::shared_ptr<WorldRetrieve> wr(new WorldRetrieve(nh, buffer));
   std::shared_ptr<Simulator> sim(new Simulator(nh, buffer));
 
   threads.push_back(std::thread(&Simulator::plannerThread, sim));
   threads.push_back(std::thread(&Simulator::overlayThread, sim));
 
-  /**
-   * ros::spin() will enter a loop, pumping callbacks.  With this version, all
-   * callbacks will be called from within this thread (the main one).  ros::spin()
-   * will exit when Ctrl-C is pressed, or the node is shutdown by the master.
-   */
+
+  //ros::spin() will enter a loop, pumping callbacks.  With this version, all
+  //callbacks will be called from within this thread (the main one).
+  //ros::spin() will exit when Ctrl-C is pressed, or the node is shutdown by the master.
   ros::spin();
 
-  /**
-   * Let's cleanup everything, shutdown ros and join the threads
-   */
+  //Let's cleanup everything, shutdown ros and join the threads
   ros::shutdown();
 
   //Join threads and begin!
@@ -75,6 +59,3 @@ int main(int argc, char **argv) {
 
   return 0;
 }
-/*!
-** @}
-*/
