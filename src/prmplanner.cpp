@@ -391,7 +391,7 @@ bool PrmPlanner::ordinateAccessible(cv::Mat &cspace, TGlobalOrd ordinate){
 }
 
 void PrmPlanner::expandConfigSpace(cv::Mat &space, double robotDiameter){
-  lmap_.expandConfigSpace(space, robotDiameter);
+  lmap_.expandConfigSpace(space, lmap_.convertToPoint(reference_, reference_), robotDiameter);
 }
 
 double PrmPlanner::distance(TGlobalOrd o1, TGlobalOrd o2){

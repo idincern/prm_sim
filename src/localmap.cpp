@@ -47,7 +47,7 @@ cv::Point LocalMap::convertToPoint(TGlobalOrd reference, TGlobalOrd ordinate){
 }
 
 
-void LocalMap::expandConfigSpace(cv::Mat &space, double robotDiameter){
+void LocalMap::expandConfigSpace(cv::Mat &space, cv::Point robotPos, double robotDiameter){
   int pixDiameter = robotDiameter / resolution_;
   std::vector<cv::Point> pointsToExpand;
 
@@ -55,8 +55,14 @@ void LocalMap::expandConfigSpace(cv::Mat &space, double robotDiameter){
   //expand its boundary by the size of the robot diameter.
   for(int i = 0; i < space.rows; i++){
     for(int j = 0; j < space.cols; j++){
-      if(space.at<uchar>(j,i) != 255){
-        pointsToExpand.push_back({i, j});
+      cv::Point p{i, j};
+
+      if(space.at<uchar>(p) != 255){
+        //Calculate distance between the point and the robot
+        //and check to see if it lies outside robot' radius's diameter.
+        //see function notes for why this is a problem
+        if(cv::norm(robotPos-p) > (pixDiameter))
+          pointsToExpand.push_back(p);
       }
     }
   }

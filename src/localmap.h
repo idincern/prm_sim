@@ -61,9 +61,13 @@ public:
    *  the robot.
    *
    *  @param space The space (map) to expand.
+   *  @param robotPos The location of the robot in the space (pixel ords)
    *  @param robotDiameter The diameter of the robot in meters.
+   *
+   *  @note It is assumed that the robot is not sitting on a wall or obstacle. Therefore,
+   *        any points within the diameter of the robot's position will not be expanded.
    */
-  void expandConfigSpace(cv::Mat &space, double robotDiameter);
+  void expandConfigSpace(cv::Mat &space, cv::Point robotPos, double robotDiameter);
 
   /*! @brief Checks if a point is within the known boundaries.
    *

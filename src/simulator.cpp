@@ -33,9 +33,9 @@ static const int MAX_BUILD_ROUNDS = 5;        /*!< The max amount of times the b
 Simulator::Simulator(ros::NodeHandle nh, TWorldDataBuffer &buffer):
   buffer_(buffer), nh_(nh), it_(nh)
 {
-  pathPub_     = nh_.advertise<geometry_msgs::PoseArray>("path", 1);
-  overlayPub_  = it_.advertise("prm", 1);
-  reqGoal_  = nh_.advertiseService("request_goal", &Simulator::requestGoal, this);
+  pathPub_      = nh_.advertise<geometry_msgs::PoseArray>("path", 1);
+  overlayPub_   = it_.advertise("prm", 1);
+  reqGoal_      = nh_.advertiseService("request_goal", &Simulator::requestGoal, this);
 
   //Get parameters from command line
   ros::NodeHandle pn("~");
@@ -64,7 +64,7 @@ void Simulator::overlayThread(){
       //We only want to see change when dirty is set to true
       overlayContainer_.access.lock();
 
-      overlayContainer_.prmOverlay.copyTo(msg);
+      overlayContainer_.data.copyTo(msg);
       overlayContainer_.dirty = false;
 
       overlayContainer_.access.unlock();
@@ -76,7 +76,6 @@ void Simulator::overlayThread(){
   }
 }
 
-
 void Simulator::plannerThread() {
   //Wait until some data has arrived in the world information buffer
   ROS_INFO("Waiting to receive world data...");
@@ -85,12 +84,12 @@ void Simulator::plannerThread() {
 
   while(ros::ok()){
     //Only plan if a new goal has been recieved
-    if(goalContainer_.isNew)
+    if(goalContainer_.dirty)
     {
       //Get the new goal
       goalContainer_.access.lock();
-      TGlobalOrd currentGoal = goalContainer_.goal;
-      goalContainer_.isNew = false;
+      TGlobalOrd currentGoal = goalContainer_.data;
+      goalContainer_.dirty = false;
       goalContainer_.access.unlock();
 
       //Recieve new information from the world buffer
@@ -109,14 +108,12 @@ void Simulator::plannerThread() {
         continue;
       }
 
-      //Create colour copy of the OgMap
-      cv::Mat colourMap;
+      //Copy to the prm overlay
       overlayContainer_.access.lock();
-      cv::cvtColor(cspace_, overlayContainer_.prmOverlay, CV_GRAY2BGR);
+      cv::cvtColor(cspace_, overlayContainer_.data, CV_GRAY2BGR);
       overlayContainer_.access.unlock();
 
       //Expand the configuration space
-      //TODO: Examine what cspace is doing...
       planner_.expandConfigSpace(cspace_, robotDiameter_);
 
       //Validate both ordinates
@@ -145,7 +142,7 @@ void Simulator::plannerThread() {
         //Update PRM overlay with network and potentially path
         overlayContainer_.access.lock();
 
-        planner_.showOverlay(overlayContainer_.prmOverlay, path);
+        planner_.showOverlay(overlayContainer_.data, path);
         overlayContainer_.dirty = true;
 
         overlayContainer_.access.unlock();
@@ -183,9 +180,9 @@ bool Simulator::requestGoal(prm_sim::RequestGoal::Request &req, prm_sim::Request
   ROS_INFO("Goal request: x=%.1f, y=%.1f", (double)req.x, (double)req.y);
   goalContainer_.access.lock();
 
-  goalContainer_.goal.x = req.x;
-  goalContainer_.goal.y = req.y;
-  goalContainer_.isNew = true;
+  goalContainer_.data.x = req.x;
+  goalContainer_.data.y = req.y;
+  goalContainer_.dirty = true;
 
   goalContainer_.access.unlock();
 

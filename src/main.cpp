@@ -32,8 +32,6 @@
 #include "worldretrieve.h"
 #include "types.h"
 
-#include <signal.h>
-
 int main(int argc, char **argv) {
   /**
    * The ros::init() function needs to see argc and argv so that it can perform
@@ -53,12 +51,9 @@ int main(int argc, char **argv) {
   //Lets create a shared pointer to the WorldDataBuffer
   //It is populated by WorldRetrieve, and consumed by Simulator
   TWorldDataBuffer buffer;
-
-  //TODO: Determine what to do with wr
   std::shared_ptr<WorldRetrieve> wr(new WorldRetrieve(nh, buffer));
   std::shared_ptr<Simulator> sim(new Simulator(nh, buffer));
 
-  //threads.push_back(std::thread(&WorldRetrieve::heartbeatThread, wr));
   threads.push_back(std::thread(&Simulator::plannerThread, sim));
   threads.push_back(std::thread(&Simulator::overlayThread, sim));
 
@@ -73,14 +68,6 @@ int main(int argc, char **argv) {
    * Let's cleanup everything, shutdown ros and join the threads
    */
   ros::shutdown();
-
-  //TODO: check correct data on /path topic.
-
-  //TODO: Should I expand configuration space of unknown areas?
-  //      If so, this creates the non-ideal case on startup when the
-  //      is sitting in unknown space after expansion.
-
-  //TODO: Heartbeat thread
 
   //TODO: Behaviour when network becomes really dense
 

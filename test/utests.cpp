@@ -142,9 +142,19 @@ TEST(ConfigSpace, Expand){
 
   EXPECT_EQ(255, img.at<uchar>(21, 21));
 
-  l.expandConfigSpace(img, 1);
+  l.expandConfigSpace(img, {100, 100}, 1);
 
   EXPECT_EQ(125, img.at<uchar>(21, 21));
+}
+
+TEST(ConfigSpace, ExpandWithRobotCloseToUnknown){
+  LocalMap l(20.0, 0.1);
+  cv::Mat img = hallway();
+  cv::Point robotPos(21, 90);
+
+  EXPECT_EQ(255, img.at<uchar>(robotPos));
+  l.expandConfigSpace(img, robotPos, 1);
+  EXPECT_EQ(255, img.at<uchar>(robotPos));
 }
 
 TEST(ConfigSpace, ConnectInEmptyMap){

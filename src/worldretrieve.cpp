@@ -29,16 +29,6 @@ WorldRetrieve::WorldRetrieve(ros::NodeHandle nh, TWorldDataBuffer &buffer):
   ogmap_ = it.subscribe("map_image/full", 1, &WorldRetrieve::ogMapCallBack, this);
 }
 
-void WorldRetrieve::heartbeatThread(void){
-  while(ros::ok()){
-    //TODO: Remove if not needed
-
-    //Display a heartbeat message every so often
-    ROS_INFO("thump thump...");
-    std::this_thread::sleep_for (std::chrono::minutes(1));
-  }
-}
-
 void WorldRetrieve::odomCallBack(const nav_msgs::OdometryConstPtr &msg){
   static bool firstCallBack = true;
   static geometry_msgs::Pose lastPose = msg->pose.pose;

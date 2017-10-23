@@ -27,10 +27,6 @@ public:
    */
   WorldRetrieve(ros::NodeHandle nh, TWorldDataBuffer &buffer);
 
-  /*! @brief Display's a heartbeat message every minute.
-   */
-  void heartbeatThread(void);
-
 private:
   ros::NodeHandle nh_;                /*!< The handle of the ros node using this class */
   ros::Subscriber odom_;              /*!< A subscription to the /odom topic */

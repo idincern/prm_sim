@@ -23,17 +23,12 @@
 #include "prmplanner.h"
 #include "types.h"
 
-typedef struct {
-  std::mutex access;  /*!< An access mutex to lock this container when the overlay is changing */
-  cv::Mat prmOverlay; /*!< A colour image displaying the prm overlay (this could include a path from robot to goal */
-  std::atomic<bool> dirty{false}; /*!< Atomic boolean to indicate to various threads if the image has changed since last viewing */
-} TOverlayContainer;  /*!< A container to control access to the prm map overlay */
-
-typedef struct {
-  std::mutex access;  /*!< An access mutex to lock this container when the goal is changing */
-  TGlobalOrd goal;    /*!< The goal ordiante */
-  std::atomic<bool> isNew{false}; /*!< Atomic boolean to indicate to various threads if the goal is new */
-} TGoalContainer;     /*!< A container to control access to the goal */
+template <typename T>
+struct TDataContainer { /*!< A container to control access to data that is accessed from multiple threads */
+  std::mutex access;  /*!< An access mutex to lock this container when the data is changing */
+  T data;             /*!< The data ordiante */
+  std::atomic<bool> dirty{false}; /*!< Atomic boolean to indicate if the data has been modified */
+};
 
 class Simulator
 {
@@ -74,10 +69,10 @@ private:
 
   double robotDiameter_;                    /*!< Diameter of the robot in meters */
   cv::Mat cspace_;                          /*!< The current configuration space (greyscale) */
-  TGoalContainer goalContainer_;            /*!< The current goal for the robot to reach */
-  TOverlayContainer overlayContainer_;      /*!< An image of the last known prm/path overlayed onto the cspace (shared between threads) */
   geometry_msgs::Pose robotPos_;            /*!< The current robot position */
 
+  TDataContainer<TGlobalOrd> goalContainer_;  /*!< The current goal for the robot to reach (shared between threads/callbacks) */
+  TDataContainer<cv::Mat> overlayContainer_;  /*!< An image of the last known prm/path overlayed onto the cspace (shared between threads) */
 
   /*! @brief Callback function for service /request_goal.
    *
