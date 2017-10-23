@@ -740,7 +740,6 @@ int main (int argc, char **argv){
   for (int i = 1; i < argc; i++) {
     if (std::string(argv[i]) == "--show") {
        ShowPrm = true;
-       std::cout << "We did it" << std::endl;
     } else if (std::string(argv[i]) == "-t") {
        MaxTries = std::stoi(argv[i + 1]);
        i++;
