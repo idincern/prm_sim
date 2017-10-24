@@ -1,5 +1,5 @@
 # prm_sim
-A ROS Probabilistic Road Map Simulator.
+A ROS Probabilistic RoadMap Simulator.
 
 ![prm-demo](https://i.imgur.com/OTk9mVd.gif)
 
