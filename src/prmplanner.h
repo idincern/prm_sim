@@ -259,8 +259,6 @@ private:
    *  Nodes (or verticies) with the least amount of edge connections appear
    *  early in the list.
    *
-   *  TODO: This is currently not used.
-   *
    *  @return vector<vertex> - Prioritised list of nodes.
    */
   std::vector<vertex> prioritiseNodes();

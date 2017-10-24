@@ -101,9 +101,7 @@ std::vector<TGlobalOrd> PrmPlanner::build(cv::Mat &cspace, TGlobalOrd start, TGl
     addOrdinate(randomOrd);
   }
 
-  //Attempt to connect start and goal continously
-  embedNode(cspace, vStart, density_, true);
-  embedNode(cspace, vGoal, density_, true);
+  //strengthen the network by joining it with the new nodes
   joinNetwork(cspace, density_);
 
   return query(cspace, start, goal);
@@ -166,12 +164,13 @@ void PrmPlanner::embedNode(cv::Mat &cspace, vertex node, unsigned int k, bool re
 
 void PrmPlanner::joinNetwork(cv::Mat &cspace, unsigned int k){
   //Attempt to connect each node in the network to its k closest neighbours
-  for(auto const &node: network_){
-    if(!graph_.canConnect(node.first)){
+  //Nodes that have the least amount of connections are embedded first
+  for(auto const &node: prioritiseNodes()){
+    if(!graph_.canConnect(node)){
       continue; //This node has already maxed out its connections
     }
 
-    embedNode(cspace, node.first, k, false);
+    embedNode(cspace, node, k, false);
   }
 }
 
