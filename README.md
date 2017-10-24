@@ -3,7 +3,7 @@ A Probabilistic RoadMap (PRM) simulator in ROS.
 
 ![prm-demo](https://i.imgur.com/OTk9mVd.gif)
 
-_As more goals are requested, the prm planner better captures the connectivity of the overall environment._
+_Planning a path from the robot's position to multiple goal locations._
 
 ## Introduction
 ### Rationale
