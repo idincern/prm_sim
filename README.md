@@ -1,9 +1,9 @@
 # prm_sim
-A ROS Probabilistic RoadMap Simulator.
+A Probabilistic RoadMap (PRM) simulator in ROS.
 
 ![prm-demo](https://i.imgur.com/OTk9mVd.gif)
 
-As more goals are requested, the prm planner better captures the connectivity of the overall environment.
+_As more goals are requested, the prm planner better captures the connectivity of the overall environment._
 
 ## Introduction
 ### Rationale
