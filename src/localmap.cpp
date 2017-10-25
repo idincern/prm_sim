@@ -59,9 +59,9 @@ void LocalMap::expandConfigSpace(cv::Mat &space, cv::Point robotPos, double robo
 
       if(space.at<uchar>(p) != 255){
         //Calculate distance between the point and the robot
-        //and check to see if it lies outside robot' radius's diameter.
+        //and check to see if it lies just outside robot' radius's.
         //see function notes for why this is a problem
-        if(cv::norm(robotPos-p) > (pixDiameter))
+        if(cv::norm(robotPos-p) > ((pixDiameter/2) + 1))
           pointsToExpand.push_back(p);
       }
     }

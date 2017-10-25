@@ -134,8 +134,10 @@ void Simulator::plannerThread() {
                robotOrd.x, robotOrd.y, currentGoal.x, currentGoal.y);
 
       std::vector<TGlobalOrd> path;
-      int cnt(0);
-      while(path.size() == 0 && cnt < MAX_BUILD_ROUNDS){
+      int round(0);
+      //While we haven't found a path and the rounds a less than the max and ros is okay,
+      //build more nodes and try to find a path
+      while(path.size() == 0 && round < MAX_BUILD_ROUNDS && ros::ok()){
         ROS_INFO("  Building nodes...");
         path = planner_.build(cspace_, robotOrd, currentGoal);
 
@@ -146,7 +148,7 @@ void Simulator::plannerThread() {
         overlayContainer_.dirty = true;
 
         overlayContainer_.access.unlock();
-        cnt++;
+        round++;
       }
 
       if(path.size() > 0){
