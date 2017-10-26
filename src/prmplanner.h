@@ -40,7 +40,7 @@ public:
   /*! @brief Constructor for a PrmPlanner.
    *
    *  @param mapSize The size of the OgMap in meters (square maps only).
-   *  @param res The resolution of the OgMaps provided to this object.
+   *  @param mapRes The resolution of the OgMaps provided to this object.
    *  @param density The density of the prm network (max neighbours a node can have).
    *
    *  @note This will set the reference position to 0,0 by default. To change this,
@@ -212,14 +212,14 @@ private:
 
   /*! @brief Determines if an ordiante exists within the graph as a vertex.
    *
-   *  @param ordinate The ordiante to find or add.
+   *  @param ord The ordiante to find or add.
    *  @return TRUE - If the ordiante exists.
    */
   bool existsAsVertex(TGlobalOrd ord);
 
   /*! @brief Finds the vertex corresponding to an ordiante.
    *
-   *  @param ordinate The ordiante to find.
+   *  @param ord The ordiante to find.
    *  @param v A reference to put the found vertex into.
    *  @return TRUE - If the ordiante was found within the network_.
    */
@@ -233,7 +233,7 @@ private:
 
   /*! @brief Determines if an ordinate lies within the radius of any other nodes.
    *
-   *  @param ordinate The ordinate to check for.
+   *  @param ord The ordinate to check for.
    *  @param r The radius qualifier.
    *  @return TRUE - If the ordindate is violating the space of any other nodes.
    */
@@ -241,8 +241,8 @@ private:
 
   /*! @brief Calculates the euclidean distance between two ordiantes.
    *
-   *  @param p1 The first ordinate.
-   *  @param p2 The second ordinate.
+   *  @param o1 The first ordinate.
+   *  @param o2 The second ordinate.
    *  @return double - The distance between the two ordiantes.
    */
   static double distance(TGlobalOrd o1, TGlobalOrd o2);

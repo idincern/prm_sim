@@ -89,7 +89,7 @@ public:
    *  Will draw a blue circle to represent a node, and blue lines to represent
    *  its connections to other nodes within the PRM.
    *
-   *  @param m The space to overlay the PRM on top of. It is assumed that this
+   *  @param space The space to overlay the PRM on top of. It is assumed that this
    *           is a color enabled image (not greyscale).
    *  @param prm A network of pixel points, and its connection to other points.
    */

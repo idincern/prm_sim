@@ -13,10 +13,10 @@
  *  When starting the prm_sim_node (using rosrun), the following parameters may
  *  be specified.
  *
- *  - _map_size:=<size of supplied ogMap in meters>
- *  - _resolution:=<resolution of the opencv map image>
- *  - _density:=<max density the prm network can have>
- *  - _robot_diameter:=<the diameter of the robot in meters>
+ *  - _map_size:=[size of supplied ogMap in meters]
+ *  - _resolution:=[resolution of the opencv map image]
+ *  - _density:=[max density the prm network can have]
+ *  - _robot_diameter:=the diameter of the robot in meters]
  *
  *  @author arosspope
  *  @date 23-10-2017
