@@ -53,6 +53,9 @@ For example if we wanted to show the building of the prm network for 3 rounds at
 ```bash
 $ ./devel/lib/prm_sim/prm_sim-test --show -t 3
 ```
+![prm-demo](https://i.imgur.com/ZJcMwlA.gif)
+
+_Sample output of tests._
 
 ## Operation
 ### Starting ROS
